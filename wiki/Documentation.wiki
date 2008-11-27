@@ -1,0 +1,14 @@
+#summary Een schoolproject om een doolhofspel te maken (inc. leveleditor).
+#labels Featured
+
+= Inleiding =
+
+Het spel zal aMAZing noemen en geschreven zijn in C (met hulp van de ncurses bibliotheek).
+
+= Details =
+
+Er komt minstens het volgende in:
+  * een spelmodus
+  * een scorebord
+  * een leveleditor
+  * mogelijkheid om level(pack)s te importeren/exporteren
