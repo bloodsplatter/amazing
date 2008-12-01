@@ -88,103 +88,134 @@
 	  263: "\b" (KEY_BACKSPACE)
 */
 
+#include <time.h>
 #include "screenlib.h"
-#include "tekst.h"
+
 
 // functieprototypes
 static void keyb_controll(void);
 static void update_loop(void);
 static void cust_draw_loop(void);
-void load_playfield(void);
+void load_commandwindow(void);
 void cust_load(void);
-void draw_menubar(void);
-void view_playfield(void);
+void print_shortcuts(void);
 
 // declaraties
-static WINDOW *playfield; // het speelveld
-static WINDOW *menubar; // de menubalk
-static WINDOW *display; // copy the current window into here
-MENU* menu;
-int playfield_width, playfield_height; // de dimensies van het speelveld
+static WINDOW *commandwindow; // in dit venster worden alle shortcuts getoond
+clock_t start, finish;
 
+#include "tekst.h"
+#include "playfield.h"
 // standaard toetsenbordcontrole
 static void keyb_controll(void)
 {
 	curr_char = getch();
-	switch(curr_char)
+	switch (DISPLAYMODE)
 	{
-		case 'q':
-		loop = FALSE;
+		case 0:
+			if (curr_char == 'Q')
+				loop = 0;
+			if (curr_char == 'N')
+				load_playfield();
 		break;
-		case KEY_F(1):
-		mvaddstr(LINES,0,"F1 PRESSED");
+		case 1:
+			if (curr_char == 'Q')
+				loop = 0;
 		break;
 	}
-	
 }
 
 
 // eigen update code (logica)
 static void update_loop(void)
 {
-	curs_set(0); // verberg cursor
-	keyb_controll(); // lees toetsenbord uit
+	curs_set(0);
+	keyb_controll();
+	switch (DISPLAYMODE)
+	{
+		case 1:
+			wmove(display,0,0);
+		break;
+	}
+	print_shortcuts(); // schrijf de shortcuts weg
 }
 
 // eigen tekencode
 static void cust_draw_loop(void)
 {
 	draw_loop(); // aanroep voor het hoofdvenster te tekenen
-	
-	
-	draw_menubar();wrefresh(menubar); // teken de menubalk
-	wrefresh(display); // teken het huidige venster
+	switch (DISPLAYMODE)
+	{
+		case 0:
+			display = NULL;
+		break;
+		case 1:
+			
+		break;
+	}
+	wnoutrefresh(commandwindow); // teken het shortcutvenster
+	wnoutrefresh(display); // teken het huidige venster
+	doupdate();
 }
 
-// code om het speelveld te laden
-void load_playfield(void)
+// functie om de shortcuts in het shortcutvenster te weergeven
+void print_shortcuts(void)
 {
-	// voor vierkant: hoogte = breedte / 2
-	playfield_width = 26; playfield_height = playfield_width / 2;
-	playfield = newwin(playfield_height,playfield_width,2,COLS/2-playfield_height); // maak nieuw venster
-	box(playfield,ACS_VLINE,ACS_HLINE); // teken de lijn rond het venster
-	wbkgdset(playfield,COLOR_BLACK); // maak de achtergrond zwart
+	int i;
+	wmove(commandwindow,1,2); // zet cursor in linkerbovenhoek van venster
+	switch (DISPLAYMODE) { // print de juiste shortcuts
+		case 0:
+			for (i=0;i<sizeof(MODE_0_S)/150;i++)
+			{
+				waddstr(commandwindow,MODE_0_S[i]);
+				wmove(commandwindow,i+2,2);
+			}
+		break;
+		case 1:
+			for (i=0;i<sizeof(MODE_1_S)/150;i++)
+			{
+				waddstr(commandwindow,MODE_1_S[i]);
+				wmove(commandwindow,i+2,2);
+			}
+		break;
+	}
 }
 
-// stel speelveld als huidig scherm in
-void view_playfield(void)
+void load_commandwindow(void)
 {
-	display = playfield;
+	if (commandwindow == NULL)
+		commandwindow = newwin(LINES-3,COLS/5-1,2,1); // maak het scherm dat de shortcuts gaat weergeven
+	else
+		wclear(commandwindow);
+	box(commandwindow,ACS_VLINE,ACS_HLINE); // teken de schermkader
 }
 
 void cust_load(void)
 {	
-	menubar = subwin(mainwnd,1,COLS,0,0); // maak het venster voor de menubalk
-	
-}
-
-// code om de menubalk te tekenen
-void draw_menubar(void)
-{
-	wmove(menubar,0,0);
-    wbkgd(menubar,COLOR_PAIR(2));
-    waddstr(menubar,MENU_1);
-    wattron(menubar,COLOR_PAIR(3));
-    waddstr(menubar,FUNC_1);
-    wattroff(menubar,COLOR_PAIR(3));
+	mvwaddstr(mainwnd,0,COLS/2-sizeof(GAME_TITLE)/2,GAME_TITLE); // centreer de titel bovenaan in beeld
+	load_commandwindow();
+	move(1,0); // cursor op (0,1) zetten
+	hline(ACS_S9,COLS);
+	DISPLAYMODE = 0;
 }
 
 // EP
 int main (int argc, char const *argv[])
 {
 	screen_init(); // initialisatie
-	color_init(); // stel de kleurenparen in
+	//color_init(); // stel de kleurenparen in
 	cust_load(); // laad alle extra componenten
 	
 	// hoofdloop
 	while (loop) {
+		start = clock();
 		update_loop(); // blok voor de logica
 		cust_draw_loop(); // blok met de tekencode
+		finish = clock();
+		if (DEBUG)
+		{
+			mvprintw(0,0,"%3lf FPS M:%d",1/((double)(finish-start)/CLOCKS_PER_SEC)/60,DISPLAYMODE);
+		}
 	}
 	
 	free_res(); // uitladen van alle resources
