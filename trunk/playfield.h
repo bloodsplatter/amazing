@@ -9,6 +9,11 @@ void write_level_list(void);
 void load_level_list(void);
 
 // definities
+struct Position
+{
+	int x;
+	int y;
+} playerPos;
 struct Playfield
 {
 	char naam[20];
@@ -16,14 +21,9 @@ struct Playfield
 	int height;
 	WINDOW *win;
 	char field_data[40][20];
-}; // datastructure met weergaveinfo over het speelveld
-struct Playfield playfield;
-struct Playfield levels[];
-struct Position
-{
-	int x;
-	int y;
-} playerPos;
+	bool hasFinish;
+	bool hasStart;
+} playfield, *levels; // datastructure met weergaveinfo over het speelveld
 
 // code om het speelveld te laden
 void load_playfield(int fieldnum)
@@ -33,7 +33,7 @@ void load_playfield(int fieldnum)
 	playfield.win = newwin(playfield.height,playfield.width,LINES/2-playfield.height,COLS/2-playfield.height); // maak nieuw venster
 	display = dupwin(playfield.win); // kopieer het venster naar de tekenbuffer
 	load_commandwindow(); // laad het shortcutvenster opnieuw in
-	DISPLAYMODE = 1;
+	DISPLAYMODE = speelveld;
 }
 
 void write_level_list(void) // schrijf de levels weg in een bestand

@@ -13,12 +13,14 @@ int curr_char = -1; // de laatst ingedrukte toets
 int loop = 1; // een flag om de eventloop te doorbreken
 static WINDOW *mainwnd; // het hoofdscherm (achtergrond)
 static WINDOW *display; // het huidige scherm
-/*
-	0 = start
-	1 = speelveld
-	3 = levelbewerker
-*/
-int DISPLAYMODE = 0; // display mode switch
+enum DisplayMode
+{
+	start,
+	speelveld,
+	levelselectie,
+	levelbewerker
+};
+int DISPLAYMODE = start; // display mode switch
 bool DEBUG = TRUE; // een flag om debug mode te achterhalen, wordt ingesteld als de 1e parameter "debug" is
 
 void screen_init(void) {

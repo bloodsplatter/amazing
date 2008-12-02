@@ -102,7 +102,7 @@ void print_shortcuts(void);
 
 // declaraties
 static WINDOW *commandwindow; // in dit venster worden alle shortcuts getoond
-clock_t start, finish;
+clock_t clock1, clock2;
 
 #include "tekst.h"
 #include "playfield.h"
@@ -112,13 +112,13 @@ static void keyb_controll(void)
 	curr_char = getch();
 	switch (DISPLAYMODE)
 	{
-		case 0:
+		case start:
 			if (curr_char == 'Q')
 				loop = 0;
 			if (curr_char == 'N')
-				load_playfield();
+				//laad levelselectie
 		break;
-		case 1:
+		case speelveld:
 			if (curr_char == 'Q')
 				loop = 0;
 		break;
@@ -133,7 +133,7 @@ static void update_loop(void)
 	keyb_controll();
 	switch (DISPLAYMODE)
 	{
-		case 1:
+		case speelveld:
 			wmove(display,0,0);
 		break;
 	}
@@ -146,10 +146,10 @@ static void cust_draw_loop(void)
 	draw_loop(); // aanroep voor het hoofdvenster te tekenen
 	switch (DISPLAYMODE)
 	{
-		case 0:
+		case start:
 			display = NULL;
 		break;
-		case 1:
+		case levelselectie:
 			
 		break;
 	}
@@ -164,14 +164,14 @@ void print_shortcuts(void)
 	int i;
 	wmove(commandwindow,1,2); // zet cursor in linkerbovenhoek van venster
 	switch (DISPLAYMODE) { // print de juiste shortcuts
-		case 0:
+		case start:
 			for (i=0;i<sizeof(MODE_0_S)/150;i++)
 			{
 				waddstr(commandwindow,MODE_0_S[i]);
 				wmove(commandwindow,i+2,2);
 			}
 		break;
-		case 1:
+		case speelveld:
 			for (i=0;i<sizeof(MODE_1_S)/150;i++)
 			{
 				waddstr(commandwindow,MODE_1_S[i]);
@@ -196,7 +196,8 @@ void cust_load(void)
 	load_commandwindow();
 	move(1,0); // cursor op (0,1) zetten
 	hline(ACS_S9,COLS);
-	DISPLAYMODE = 0;
+	DISPLAYMODE = start;
+	levels = (struct Playfield *)calloc(sizeof(struct Playfield),2);
 }
 
 // EP
@@ -208,13 +209,13 @@ int main (int argc, char const *argv[])
 	
 	// hoofdloop
 	while (loop) {
-		start = clock();
+		clock1 = clock();
 		update_loop(); // blok voor de logica
 		cust_draw_loop(); // blok met de tekencode
-		finish = clock();
+		clock2 = clock();
 		if (DEBUG)
 		{
-			mvprintw(0,0,"%3lf FPS M:%d",1/((double)(finish-start)/CLOCKS_PER_SEC)/60,DISPLAYMODE);
+			mvprintw(0,0,"%3lf FPS M:%d",1/((double)(clock2-clock1)/CLOCKS_PER_SEC)/60,DISPLAYMODE);
 		}
 	}
 	
