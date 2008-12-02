@@ -11,4 +11,3 @@ Er komt minstens het volgende in:
   * een spelmodus
   * een scorebord
   * een leveleditor
-  * mogelijkheid om level(pack)s te importeren/exporteren
