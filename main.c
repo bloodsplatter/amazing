@@ -88,7 +88,9 @@
 	  263: "\b" (KEY_BACKSPACE)
 */
 
+#ifndef SCREENLIB
 #include "screenlib.h"
+#endif
 
 // functieprototypes
 static void keyb_controll(void);
@@ -115,7 +117,7 @@ static void keyb_controll(void)
 			if (curr_char == 'Q')
 				loop = 0;
 			if (curr_char == 'N')
-				//laad levelselectie
+				
 		break;
 		case speelveld:
 			if (curr_char == 'Q')
@@ -177,6 +179,13 @@ void print_shortcuts(void)
 				wmove(commandwindow,i+2,2);
 			}
 		break;
+		case levelbewerker:
+		for (i=0;i<sizeof(MODE_2_S)/150;i++)
+		{
+			waddstr(commandwindow,MODE_2_S[i]);
+			wmove(commandwindow,i+2,2);
+		}
+		break;
 	}
 }
 
@@ -197,6 +206,17 @@ void cust_load(void)
 	hline(ACS_S9,COLS);
 	DISPLAYMODE = start;
 	levels = (struct Playfield *)calloc(sizeof(struct Playfield),2);
+	//load_level_list(NULL);
+}
+
+void free_res(void)
+{
+	// resources vrijgeven
+	// write_level_list(NULL);
+	free(levels);
+	curs_set(1);
+	echo();
+	nocbreak();
 }
 
 // EP

@@ -2,7 +2,9 @@
 #include <stdlib.h>
 #include <ctype.h>
 #include <stdio.h>
-
+#ifndef SCREENLIB
+#define SCREENLIB
+#endif
 #define ENTER 10
 #define ESCAPE 27
 
@@ -37,14 +39,6 @@ void screen_init(void) {
 	
 	// schermen tekenen;
 	refresh();
-}
-
-void free_res(void)
-{
-	// resources vrijgeven
-	curs_set(1);
-	echo();
-	nocbreak();
 }
 
 static void draw_loop(void)
