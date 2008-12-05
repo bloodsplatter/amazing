@@ -1,12 +1,18 @@
 // constanten
+#ifndef PLAYFIELD
+#define PLAYFIELD
 #define WALL ACS_BLOCK
 #define PLAYER ACS_BULLET
 #define ENDPOINT ACS_CKBOARD
+#endif
+#ifndef SCREENLIB
+#include "screenlib.h"
+#endif
 
 // functieprototypes
 void load_playfield(int);
-void write_level_list(void);
-void load_level_list(void);
+void write_level_list(char*);
+void load_level_list(char*);
 
 // definities
 struct Position
@@ -36,27 +42,29 @@ void load_playfield(int fieldnum)
 	DISPLAYMODE = speelveld;
 }
 
-void write_level_list(void) // schrijf de levels weg in een bestand
+void write_level_list(char* naam) // schrijf de levels weg in een bestand
 {
-	int count = sizeof(levels)/sizeof(playfield);
-	FILE *file = NULL;
-	file = fopen("levels","w");
-	if (file != NULL) {
-		fprintf(file,"%d\n",count);
-		fwrite(levels,sizeof(playfield),sizeof(levels)/sizeof(playfield),file);
-		fclose(file);
+	naam = (naam == NULL)?"levels":naam;
+	int count = sizeof(levels)/sizeof(playfield); // het aantal levels
+	FILE *file = NULL; // maak bestandspointer
+	file = fopen("levels","w"); // open het bestand voor schrijven
+	if (file != NULL) { // als het openen geslaagd is:
+		fprintf(file,"%d\n",count); // schrijf het aantal weg
+		fwrite(levels,sizeof(playfield),sizeof(levels)/sizeof(playfield),file); // schrijf de levels array weg
+		fclose(file); // sluit het bestand
 	}
 }
 
 // laad de levellijst in
-void load_level_list(void)
+void load_level_list(char* naam)
 {
-	int i, count = 0;
-	FILE *file = NULL;
-	file = fopen("levels","r");
-	if (file != NULL)
+	naam = (naam == NULL)?"levels":naam;
+	int count = 0; // initialisaties
+	FILE *file = NULL; // maak bestandspointer
+	file = fopen("levels","r"); // open bestand voor lezen
+	if (file != NULL) // als het bestand geopend is:
 	{
-		fscanf(file,"%d%c",&count);
+		fscanf(file,"%d%c",&count); // lees aantal levels in bestand
 		levels = (struct Playfield *)calloc(count,sizeof(playfield));
 		fread(levels,sizeof(playfield),sizeof(levels)/sizeof(playfield),file);
 		fclose(file);
