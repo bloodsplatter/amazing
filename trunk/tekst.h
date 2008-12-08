@@ -11,6 +11,6 @@ const char MODE_1_S[2][150] = {"Shift + Q: afsluiten",
 const char MODE_2_S[6][150] = {"Shift + S: Opslaan",
 								"Shift + Q: naar Hoofdmenu",
 								"Pijltjes: bewegen",
-								"W: muur plaatsen",
+								"W: muur aan/afzetten",
 								"X: einde plaatsen",
-								"B: begin plaatsen"} // tekst van de zijbalk (MODUS levelbewerker)
+								"B: begin plaatsen"}; // tekst van de zijbalk (MODUS levelbewerker)

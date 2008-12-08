@@ -2,8 +2,9 @@
 #include <stdlib.h>
 #include <ctype.h>
 #include <stdio.h>
-#ifndef SCREENLIB
-#define SCREENLIB
+#include <strings.h>
+#ifndef _SCREENLIB_
+#define _SCREENLIB_
 #endif
 #define ENTER 10
 #define ESCAPE 27

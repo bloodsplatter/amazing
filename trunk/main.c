@@ -88,7 +88,7 @@
 	  263: "\b" (KEY_BACKSPACE)
 */
 
-#ifndef SCREENLIB
+#ifndef _SCREENLIB_
 #include "screenlib.h"
 #endif
 
@@ -107,7 +107,9 @@ static WINDOW *commandwindow; // in dit venster worden alle shortcuts getoond
 #include "tekst.h"
 #include "playfield.h"
 #include "encryption.h"
-// standaard toetsenbordcontrole
+#include "editor.h"
+#include "levelselect.h"
+// verwerk invoer
 static void keyb_controll(void)
 {
 	curr_char = getch();
@@ -117,11 +119,14 @@ static void keyb_controll(void)
 			if (curr_char == 'Q')
 				loop = 0;
 			if (curr_char == 'N')
-				
+				load_select_window();
 		break;
 		case speelveld:
 			if (curr_char == 'Q')
-				loop = 0;
+				// ga naar hoofdmenu
+		break;
+		case levelbewerker:
+			
 		break;
 	}
 }
@@ -151,6 +156,12 @@ static void cust_draw_loop(void)
 			display = NULL;
 		break;
 		case levelselectie:
+			
+		break;
+		case levelbewerker:
+			draw_field();
+		break;
+		case speelveld:
 			
 		break;
 	}
@@ -201,19 +212,21 @@ void load_commandwindow(void)
 void cust_load(void)
 {
 	mvwaddstr(mainwnd,0,COLS/2-sizeof(GAME_TITLE)/2,GAME_TITLE); // centreer de titel bovenaan in beeld
-	load_commandwindow();
+	load_commandwindow(); // laad het shortcutvenster
 	move(1,0); // cursor op (0,1) zetten
-	hline(ACS_S9,COLS);
-	DISPLAYMODE = start;
+	hline(ACS_S9,COLS); // teken lijn onder titel
+	DISPLAYMODE = start; // stel displaymodus op startscherm in
+	// TODO: comment the line below when we start loading from levelfiles
 	levels = (struct Playfield *)calloc(sizeof(struct Playfield),2);
-	//load_level_list(NULL);
+	load_level_list(NULL);
 }
 
 void free_res(void)
 {
 	// resources vrijgeven
-	// write_level_list(NULL);
+	write_level_list(NULL);
 	free(levels);
+	// terminal herstellen
 	curs_set(1);
 	echo();
 	nocbreak();
