@@ -55,10 +55,10 @@ void load_playfield(const int* fieldnum)
 		playfield.win = newwin(playfield.height,playfield.width,LINES/2-playfield.height,COLS/2-playfield.height); // maak nieuw venster
 	} else {
 		memcpy(&playfield,&levels[*fieldnum],sizeof(playfield)); // kopieer speelveld uit array naar plaats voor huidig speelveld
+		display = dupwin(playfield.win); // kopieer het venster naar de tekenbuffer
+		load_commandwindow(); // laad het shortcutvenster opnieuw in
+		DISPLAYMODE = speelveld; // zet displaymodus
 	}
-	display = dupwin(playfield.win); // kopieer het venster naar de tekenbuffer
-	load_commandwindow(); // laad het shortcutvenster opnieuw in
-	DISPLAYMODE = speelveld; // zet displaymodus
 }
 
 void write_level_list(char* naam) // schrijf de levels weg in een bestand
@@ -89,6 +89,15 @@ void load_level_list(char* naam)
 		}
 		fclose(file); // bestand sluiten
 	}
+}
+
+void make_new_level(char* naam)
+{
+	load_playfield(NULL);
+	realloc(levels,(levelcount+1)*sizeof(playfield));
+	levelcount++;
+	strcpy(playfield.naam,naam);
+	memcpy(&levels[levelcount],&playfield,sizeof(playfield));
 }
 
 void draw_field(void) // teken het veld

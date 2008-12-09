@@ -97,6 +97,7 @@ static void keyb_controll(void);
 static void update_loop(void);
 static void cust_draw_loop(void);
 void load_commandwindow(void);
+void reload_mainmenu(void);
 void cust_load(void);
 void print_shortcuts(void);
 
@@ -119,14 +120,26 @@ static void keyb_controll(void)
 			if (curr_char == 'Q')
 				loop = 0;
 			if (curr_char == 'N')
-				load_select_window();
+				load_select_window(FALSE);
+			if (curr_char == 'C')
+				load_select_window(TRUE);
 		break;
 		case speelveld:
 			if (curr_char == 'Q')
-				// ga naar hoofdmenu
+				reload_mainmenu();
 		break;
 		case levelbewerker:
 			
+		break;
+		case levelselectie:
+			if (curr_char == KEY_UP)
+				mvselection_up();
+			if (curr_char == KEY_DOWN)
+				mvselection_down();
+			if (curr_char == 'Q')
+				reload_mainmenu();
+			if (curr_char == ENTER)
+				level_selected();
 		break;
 	}
 }
@@ -140,7 +153,7 @@ static void update_loop(void)
 	switch (DISPLAYMODE)
 	{
 		case speelveld:
-			wmove(display,0,0);
+			wmove(display,playerPos.y,playerPos.x);
 		break;
 	}
 	print_shortcuts(); // schrijf de shortcuts weg
@@ -156,7 +169,7 @@ static void cust_draw_loop(void)
 			display = NULL;
 		break;
 		case levelselectie:
-			
+			print_choices();
 		break;
 		case levelbewerker:
 			draw_field();
@@ -197,6 +210,13 @@ void print_shortcuts(void)
 			wmove(commandwindow,i+2,2);
 		}
 		break;
+		case levelselectie:
+		for (i=0;i<sizeof(MODE_3_S)/150;i++)
+		{
+			waddstr(commandwindow,MODE_3_S[i]);
+			wmove(commandwindow,i+2,2);
+		}	
+		break;
 	}
 }
 
@@ -221,22 +241,29 @@ void cust_load(void)
 	load_level_list(NULL);
 }
 
-void free_res(void)
+void free_res(void) // resources vrijgeven
 {
-	// resources vrijgeven
 	write_level_list(NULL);
 	free(levels);
+	delwin(display);
+	delwin(commandwindow);
 	// terminal herstellen
 	curs_set(1);
 	echo();
 	nocbreak();
 }
 
+void reload_mainmenu(void) // laad het hoofdmenu terug in
+{
+	delwin(display); // geef alle resources van display vrij
+	DISPLAYMODE = start; // stel schermmodus in
+	load_commandwindow(); // laad huidige shortcuts
+}
+
 // EP
 int main (int argc, char const *argv[])
 {
 	screen_init(); // initialisatie
-	//color_init(); // stel de kleurenparen in
 	cust_load(); // laad alle extra componenten
 	
 	// hoofdloop
