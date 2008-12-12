@@ -78,7 +78,7 @@ void load_level_list(char* naam)
 {
 	naam = (naam == NULL)?"levels":naam; // optionele argumenten initialiseren
 	FILE *file = NULL; // maak bestandspointer
-	file = fopen("levels","r"); // open bestand voor lezen
+	file = fopen(naam,"r"); // open bestand voor lezen
 	if (file != NULL) // als het bestand geopend is:
 	{
 		fscanf(file,"%d",&levelcount); // lees aantal levels in bestand
@@ -87,7 +87,7 @@ void load_level_list(char* naam)
 			levels = (struct Playfield *)calloc(levelcount,sizeof(playfield)); // maak genoeg geheugen vrij
 			fread(levels,sizeof(playfield),levelcount,file); // levels inlezen
 		}
-		fclose(file); // bestand sluiten
+		
 	}
 }
 

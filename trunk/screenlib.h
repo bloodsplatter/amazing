@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <ctype.h>
 #include <stdio.h>
-#include <strings.h>
+#include <string.h>
 #ifndef _SCREENLIB_
 #define _SCREENLIB_
 #endif
@@ -26,6 +26,9 @@ enum DisplayMode
 int DISPLAYMODE = start; // display mode switch
 bool DEBUG = TRUE; // een flag om debug mode te achterhalen, wordt ingesteld als de 1e parameter "debug" is
 
+void screen_init(void);
+static void draw_loop(void);
+
 void screen_init(void) {
 	// omgeving instellen
 	mainwnd = initscr(); // hoofdscher
@@ -46,16 +49,4 @@ static void draw_loop(void)
 {
 	// schermen tekenen
 	refresh();
-}
-
-void color_init(void)
-{
-	if (color_support) // capaciteiten controleren
-	    {
-	        start_color();
-			// kleurenkoppels voor menu's
-		    init_pair(1,COLOR_WHITE,COLOR_BLUE);
-		    init_pair(2,COLOR_BLUE,COLOR_WHITE);
-		    init_pair(3,COLOR_RED,COLOR_WHITE);
-	    }
 }
