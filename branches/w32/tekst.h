@@ -17,3 +17,4 @@ const char MODE_2_S[6][150] = {"Shift + S: Opslaan",
 const char MODE_3_S[3][150] = {"Shift + Q: naar hoofdmenu",
 								"Pijltoetsen: level kiezen",
 								"Enter: levelkeuze bevestigen"}; // tekst van de zijbalk (MODUS levelselectie)
+								
