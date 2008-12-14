@@ -7,4 +7,4 @@
 #tekst.h
 
 
-gcc -v -Os -o programmeeropdracht main.c -L/sw/lib/ -I/sw/include/ -lncurses && echo "Build done";
+gcc -Os -o programmeeropdracht main.c -L/sw/lib/ -I/sw/include/ -lncurses && echo "Build done";
