@@ -107,7 +107,7 @@ static WINDOW *commandwindow; // in dit venster worden alle shortcuts getoond
 // include eigen headers
 #include "tekst.h"
 #include "playfield.h"
-#include "encryption.h"
+// not including encryption because cygwin does not know CommonCrypto
 #include "editor.h"
 #include "levelselect.h"
 // verwerk invoer
