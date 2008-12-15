@@ -55,6 +55,7 @@ void load_playfield(const int* fieldnum)
 		playfield.win = newwin(playfield.height,playfield.width,LINES/2-playfield.height,COLS/2-playfield.height); // maak nieuw venster
 	} else {
 		memcpy(&playfield,&levels[*fieldnum],sizeof(playfield)); // kopieer speelveld uit array naar plaats voor huidig speelveld
+		delwin(display); // vorige venstergeheugen vrijgeven
 		display = dupwin(playfield.win); // kopieer het venster naar de tekenbuffer
 		load_commandwindow(); // laad het shortcutvenster opnieuw in
 		DISPLAYMODE = speelveld; // zet displaymodus
