@@ -120,9 +120,9 @@ static void keyb_controll(void)
 			if (curr_char == 'Q')
 				loop = 0;
 			if (curr_char == 'N')
-				load_select_window(FALSE);
+				load_select_window(0);
 			if (curr_char == 'C')
-				load_select_window(TRUE);
+				load_select_window(1);
 		break;
 		case speelveld:
 			if (curr_char == 'Q')
@@ -178,9 +178,8 @@ static void cust_draw_loop(void)
 			
 		break;
 	}
-	wnoutrefresh(commandwindow); // teken het shortcutvenster
-	wnoutrefresh(display); // teken het huidige venster
-	doupdate();
+	wrefresh(commandwindow); // teken het shortcutvenster
+	wrefresh(display); // teken het huidige venster
 }
 
 // functie om de shortcuts in het shortcutvenster te weergeven
@@ -255,6 +254,8 @@ void free_res(void) // resources vrijgeven
 
 void reload_mainmenu(void) // laad het hoofdmenu terug in
 {
+	wclear(display);
+	wrefresh(display);
 	delwin(display); // geef alle resources van display vrij
 	DISPLAYMODE = start; // stel schermmodus in
 	load_commandwindow(); // laad huidige shortcuts

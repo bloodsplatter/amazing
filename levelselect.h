@@ -15,7 +15,7 @@
 #endif
 
 // functieprototypes
-void load_select_window(bool);
+void load_select_window(int);
 void print_choices(void);
 void mvselection_down(void);
 void mvselection_up(void);
@@ -23,16 +23,17 @@ void level_selected(void);
 
 // declaraties
 static WINDOW* menuselect;
-bool forEditing = FALSE;
+int forEditing = 0;
 int current_choice = 0;
 
-void load_select_window(bool edit) // laad het selectiescherm
+void load_select_window(int edit) // laad het selectiescherm
 {
-	if (menuselect == display) { // maak venster leeg
-		wclear(display);
-	} else {
-		menuselect = newwin(LINES/2-3,COLS/2-COLS/4,LINES/4,(COLS/2-COLS/4)/2); // maak een gecentreerd venster
+	if (menuselect == NULL) { // maak venster leeg
+		menuselect = newwin(LINES/2-3,COLS/2-COLS/4,3,COLS/4); // maak een gecentreerd venster
+		delwin(display); // vorige venstergeheugen vrijgeven
 		display = dupwin(menuselect); // kopieer venster
+	} else {
+		wclear(display);
 	}
 	forEditing = edit; // set the editing boolean
 	DISPLAYMODE = levelselectie; // zet displaymodus
@@ -42,13 +43,14 @@ void load_select_window(bool edit) // laad het selectiescherm
 void print_choices(void) // zet alle keuzes in het scherm
 {
 	int i = 0;
-	for (;i<=(forEditing?levelcount+1:levelcount);i++)
+	for (;i<levelcount;i++)
 	{
-		mvwprintw(display,i,1,"%c%d)%s",i==current_choice?SELECTOR:0x32,i,levels[i].naam); // print alle namen van levels en de selectiecursor
+		mvwprintw(display,i,0,"%c%d)%s",i==current_choice?SELECTOR:0x32,i,levels[i].naam); // print alle namen van levels en de selectiecursor
 	}
-	if (forEditing == TRUE)
+	if (forEditing)
 	{
-		mvwprintw(display,i,1,"%c%d)%s",i==current_choice?SELECTOR:0x32,i+1,"nieuwe level"); // print ook een nieuwe entry om een level bij te maken
+		mvwprintw(display,i,0,"%c%d)%s",i==current_choice?SELECTOR:0x32,i+1,"nieuwe level"); // print ook een nieuwe entry om een level bij te maken
+		mvprintw(0,0,"i=%d choice=%d edit=%d",i,current_choice,forEditing);
 	}
 }
 
