@@ -44,11 +44,11 @@ void print_choices(void) // zet alle keuzes in het scherm
 	int i = 0;
 	for (;i<=(forEditing?levelcount+1:levelcount);i++)
 	{
-		mvwprintw(display,i,1,"%c%d)%s",i==current_choice?SELECTOR:0x32,i,levels[i].naam); // print alle namen van levels en de selectiecursor
+		mvwprintw(display,i,1,"%c%d)%s",i==current_choice?SELECTOR:' ',i,levels[i].naam); // print alle namen van levels en de selectiecursor
 	}
 	if (forEditing == TRUE)
 	{
-		mvwprintw(display,i,1,"%c%d)%s",i==current_choice?SELECTOR:0x32,i+1,"nieuwe level"); // print ook een nieuwe entry om een level bij te maken
+		mvwprintw(display,i,1,"%c%d)%s",i==current_choice?SELECTOR:' ',i+1,"nieuwe level"); // print ook een nieuwe entry om een level bij te maken
 	}
 }
 
