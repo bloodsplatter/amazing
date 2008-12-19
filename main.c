@@ -236,7 +236,7 @@ void cust_load(void)
 	hline(ACS_S9,COLS); // teken lijn onder titel
 	DISPLAYMODE = start; // stel displaymodus op startscherm in
 	// TODO: comment the line below when we start loading from levelfiles
-	levels = (struct Playfield *)calloc(sizeof(struct Playfield),2);
+	levels = (PLAYFIELD *)calloc(sizeof(PLAYFIELD),1);
 	if (prepare_db())
 	{
 		load_level_list_sqlite();

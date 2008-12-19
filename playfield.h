@@ -23,7 +23,7 @@ struct Position
 	int y;
 } playerPos;
 
-struct Playfield
+typedef struct
 {
 	char naam[20]; // naam van de level
 	int width; // breedte
@@ -34,7 +34,9 @@ struct Playfield
 	bool hasStart; // heeft start
 	struct Position startPos; // startpositie
 	struct Position endPos;
-} playfield, *levels; // datastructure met weergaveinfo over het speelveld
+} PLAYFIELD; // datastructure met weergaveinfo over het speelveld
+
+PLAYFIELD* playfield, *levels;
 
 int levelcount = 0;
 // functieprototypes
@@ -42,7 +44,7 @@ void load_playfield(const int*);
 void write_level_list(char*);
 void load_level_list(char*);
 void draw_field(void);
-bool validate_playfield(const struct Playfield);
+bool validate_playfield(PLAYFIELD*);
 int prepare_db(void);
 void load_level_list_sqlite(void);
 void write_level_list_sqlite(void);
@@ -57,13 +59,13 @@ void load_playfield(const int* fieldnum)
 {
 	if (fieldnum == NULL) {
 		// voor vierkant: hoogte = breedte / 2
-		playfield.width = 40; playfield.height = 20;
-		playfield.startPos.x = 0;
-		playfield.startPos.y = 0;
-		playfield.endPos.x = playfield.width - 1;
-		playfield.endPos.y = playfield.height - 1;
-		playfield.hasFinish = TRUE;
-		playfield.hasStart = TRUE;
+		playfield->width = 40; playfield->height = 20;
+		playfield->startPos.x = 0;
+		playfield->startPos.y = 0;
+		playfield->endPos.x = playfield->width - 1;
+		playfield->endPos.y = playfield->height - 1;
+		playfield->hasFinish = FALSE;
+		playfield->hasStart = FALSE;
 		/*
 		* newwin(lines,cols,begin_y,begin_x)
 		* lines = hoogte
@@ -71,11 +73,11 @@ void load_playfield(const int* fieldnum)
 		* (begin_x,begin_y) = plaats linkerbovenhoek
 		* speelveld wordt gecentreerd getekend, dus altijd schermdimensie/2-velddimensie/2 (+offset)
 		*/
-		playfield.win = newwin(playfield.height,playfield.width,(LINES/2-playfield.height/2),(COLS/2-playfield.height/2)+3); // maak nieuw venster
+		playfield->win = newwin(playfield->height,playfield->width,(LINES/2-playfield->height/2),(COLS/2-playfield->height/2)+3); // maak nieuw venster
 	} else {
 		memcpy(&playfield,&levels[*fieldnum],sizeof(playfield)); // kopieer speelveld uit array naar plaats voor huidig speelveld
 		delwin(display); // vorige venstergeheugen vrijgeven
-		display = dupwin(playfield.win); // kopieer het venster naar de tekenbuffer
+		display = dupwin(playfield->win); // kopieer het venster naar de tekenbuffer
 		load_commandwindow(); // laad het shortcutvenster opnieuw in
 		DISPLAYMODE = speelveld; // zet displaymodus
 	}
@@ -104,7 +106,7 @@ void load_level_list(char* naam)
 		fscanf(file,"%d",&levelcount); // lees aantal levels in bestand
 		if (levelcount>0) { // geen levels inlezen als deze er niet zijn
 			free(levels); // huidig level geheugen vrijgeven om memory leaks te voorkomen
-			levels = (struct Playfield *)calloc(levelcount,sizeof(playfield)); // maak genoeg geheugen vrij
+			levels = (PLAYFIELD *)calloc(levelcount,sizeof(playfield)); // maak genoeg geheugen vrij
 			fread(levels,sizeof(playfield),levelcount,file); // levels inlezen
 		}
 		
@@ -143,7 +145,7 @@ void load_level_list_sqlite(void)
 		}
 		
 		sqlite3_finalize(statement);
-		query = "SELECT naam,data FROM levels";
+		query = "SELECT * FROM levels";
 		
 		if ( sqlite3_prepare_v2(db,query,-1,&statement,&left) == SQLITE_OK )
 		{
@@ -151,7 +153,7 @@ void load_level_list_sqlite(void)
 			while (sqlite3_step(statement) != SQLITE_DONE)
 			{
 				char* naam = sconvertu2s(sqlite3_column_text(statement, 0));
-				char** field = (char **)sqlite3_column_blob(statement, 1);
+				char** field = (char **)sqlite3_column_blob(statement, 3);
 				i++;
 			}
 		}
@@ -180,10 +182,10 @@ void write_level_list_sqlite(void)
 void make_new_level(char* naam)
 {
 	load_playfield(NULL);
-	realloc(levels,(levelcount+1)*sizeof(playfield));
+	realloc(levels,(levelcount+1)*sizeof(PLAYFIELD));
 	levelcount++;
-	strcpy(playfield.naam,naam);
-	memcpy(&levels[levelcount],&playfield,sizeof(playfield));
+	playfield->naam = naam;
+	memcpy(&levels[levelcount],playfield,sizeof(PLAYFIELD));
 }
 
 void draw_field(void) // teken het veld
@@ -191,16 +193,16 @@ void draw_field(void) // teken het veld
 	int r = 0, c = 0; // tellers
 	wclear(display); // wis de huidige inhoud
 	
-	while ( *(*(playfield.field_data+r)+c) ) 
+	while ( *(*(playfield->field_data+r)+c) ) 
 	{
 		wmove(display,r,0);
-		while ( *(*(playfield.field_data+r)+c) != '\n' )
+		while ( *(*(playfield->field_data+r)+c) != '\n' )
 		{
-			if ( *(*(playfield.field_data+r)+c) == WALL || *(*(playfield.field_data+r)+c) == ENDPOINT )
+			if ( *(*(playfield->field_data+r)+c) == WALL || *(*(playfield->field_data+r)+c) == ENDPOINT )
 			{
-				mvwaddch(display,r,c,*(*(playfield.field_data+r)+c));
-				c++;
+				mvwaddch(display,r,c,*(*(playfield->field_data+r)+c));
 			}
+			c++;
 		}
 		r++;
 	}
@@ -209,19 +211,19 @@ void draw_field(void) // teken het veld
 }
 
 // functie om te bepalen of een speelveld klaar is om gespeeld te worde
-bool validate_playfield(const struct Playfield speelveld)
+bool validate_playfield(PLAYFIELD* speelveld)
 {
-	return (speelveld.hasFinish && speelveld.hasStart) && (speelveld.width == speelveld.height * 2);
+	return (speelveld->hasFinish && speelveld->hasStart) && (speelveld->width == speelveld->height * 2);
 }
 
 // level voorbereiden op opslaan
 char** prepare_level_for_safe(const char** field, char** dest)
 {
 	int r, c;
-	dest = (char**)malloc(playfield.width * playfield.height + playfield.height + 1);
-	for (r=0;r<playfield.height;r++)
+	dest = (char**)malloc(playfield->width * playfield->height + playfield->height + 1);
+	for (r=0;r<playfield->height;r++)
 	{
-		for (c=0;c<playfield.width;c++)
+		for (c=0;c<playfield->width;c++)
 		{
 			*(*(dest+r)+c) = *(*(field+r)+c);
 		}

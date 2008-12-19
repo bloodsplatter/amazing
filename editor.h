@@ -20,43 +20,43 @@ void setWall(int, int);
 
 void setStartPosition(int y, int x) // stel het beginpunt in
 {
-	if (playfield.hasStart == FALSE) // er is nog geen startpunt
+	if (playfield->hasStart == FALSE) // er is nog geen startpunt
 	{
-		playfield.startPos.x = x;
-		playfield.startPos.y = y;
-		playfield.field_data[x][y] = PLAYER;
-		playfield.hasStart = TRUE;
+		playfield->startPos.x = x;
+		playfield->startPos.y = y;
+		*(*(playfield->field_data+y)+x) = PLAYER;
+		playfield->hasStart = TRUE;
 	}
 	else // verwissel startpunt
 	{
-		playfield.field_data[playfield.startPos.x][playfield.startPos.y] = WALL;
-		playfield.startPos.x = x;
-		playfield.startPos.y = y;
-		playfield.field_data[x][y] = PLAYER;
+		playfield->field_data[playfield->startPos.x][playfield->startPos.y] = WALL;
+		playfield->startPos.x = x;
+		playfield->startPos.y = y;
+		*(*(playfield->field_data+y)+x) = PLAYER;
 	}
 }
 
 void setEndPosition(int y,int x) // stel eindpunt in
 {
-	if (playfield.hasFinish == FALSE) // er is nog geen eindpunt
+	if (playfield->hasFinish == FALSE) // er is nog geen eindpunt
 	{
-		playfield.endPos.x = x;
-		playfield.endPos.y = y;
-		playfield.field_data[x][y] = ENDPOINT;
-		playfield.hasFinish = TRUE;
+		playfield->endPos.x = x;
+		playfield->endPos.y = y;
+		playfield->field_data[x][y] = ENDPOINT;
+		playfield->hasFinish = TRUE;
 	}
 	else // verwissel eindpunt
 	{
-		playfield.field_data[playfield.endPos.x][playfield.endPos.y] = WALL;
-		playfield.endPos.x = x;
-		playfield.endPos.y = y;
-		playfield.field_data[x][y] = ENDPOINT;
+		playfield->field_data[playfield->endPos.x][playfield->endPos.y] = WALL;
+		playfield->endPos.x = x;
+		playfield->endPos.y = y;
+		*(*(playfield->field_data+y)+x) = ENDPOINT;
 	}
 }
 
 void setWall(int y, int x) // zet muur op huidige plaats
 {
-	char *curPos = &playfield.field_data[x][y];
+	char *curPos = (*(playfield->field_data+y)+x);
 	if (*curPos == WALL)
 	{
 		*curPos = EMPTY;
@@ -65,11 +65,11 @@ void setWall(int y, int x) // zet muur op huidige plaats
 		*curPos = WALL;
 	} else if (*curPos == ENDPOINT)
 	{
-		playfield.hasFinish = FALSE;
+		playfield->hasFinish = FALSE;
 		*curPos = WALL;
 	} else if (*curPos == PLAYER)
 	{
-		playfield.hasStart = FALSE;
+		playfield->hasStart = FALSE;
 		*curPos = WALL;
 	}
 }
