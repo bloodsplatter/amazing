@@ -6,8 +6,11 @@
 #endif
 #ifndef _ENCRYPTION_
 #define _ENCRYPTION_
-#include "charsign.h"
+
 #include <CommonCrypto/CommonDigest.h>
+#endif
+#ifndef _CHARSIGN_
+#include "charsign.h"
 #endif
 
 char key[64] = "";

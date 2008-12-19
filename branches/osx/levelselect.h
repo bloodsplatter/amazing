@@ -11,7 +11,7 @@
 #ifndef _EDITOR_
 #include "editor.h"
 #endif
-#define SELECTOR ACS_LTEE
+#define SELECTOR '>'
 #endif
 
 // functieprototypes
@@ -29,7 +29,7 @@ int current_choice = 0;
 void load_select_window(int edit) // laad het selectiescherm
 {
 	if (menuselect == NULL) { // maak venster leeg
-		menuselect = newwin(LINES/2-3,COLS/2-COLS/4,3,COLS/4); // maak een gecentreerd venster
+		menuselect = newwin(LINES/2-3,COLS/2-COLS/4,3,COLS/3); // maak een gecentreerd venster
 		delwin(display); // vorige venstergeheugen vrijgeven
 		display = dupwin(menuselect); // kopieer venster
 	} else {
@@ -49,7 +49,7 @@ void print_choices(void) // zet alle keuzes in het scherm
 	}
 	if (forEditing)
 	{
-		mvwprintw(display,i,0,"%c%d)%s",i==current_choice?SELECTOR:0x32,i+1,"nieuwe level"); // print ook een nieuwe entry om een level bij te maken
+		mvwprintw(display,i,0,"%c%d) %s",i==current_choice?SELECTOR:0x32,i+1,"nieuwe level"); // print ook een nieuwe entry om een level bij te maken
 		mvprintw(0,0,"i=%d choice=%d edit=%d",i,current_choice,forEditing);
 	}
 }
@@ -70,7 +70,8 @@ void level_selected(void) // laat geselecteerde level
 {
 	if (current_choice > levelcount && forEditing) // maak nieuwe level aan
 	{
-		
+		// TODO: haal naam van speelveld op
+		// make_new_playfield(naam); 
 	} else // open geselecteerde level
 	{
 		if (forEditing)
