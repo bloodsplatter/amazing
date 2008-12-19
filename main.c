@@ -237,6 +237,10 @@ void cust_load(void)
 	DISPLAYMODE = start; // stel displaymodus op startscherm in
 	// TODO: comment the line below when we start loading from levelfiles
 	levels = (struct Playfield *)calloc(sizeof(struct Playfield),2);
+	if (prepare_db())
+	{
+		load_level_list_sqlite();
+	}
 	load_level_list(NULL);
 }
 
