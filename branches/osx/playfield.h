@@ -29,7 +29,7 @@ struct Playfield
 	int width; // breedte
 	int height; // hoogte
 	WINDOW *win; // venster (weergave)
-	char field_data[20][40]; // map data
+	char** field_data; // map data
 	bool hasFinish; // heeft finish
 	bool hasStart; // heeft start
 	struct Position startPos; // startpositie
@@ -44,6 +44,9 @@ void load_level_list(char*);
 void draw_field(void);
 bool validate_playfield(const struct Playfield);
 int prepare_db(void);
+void load_level_list_sqlite(void);
+void write_level_list_sqlite(void);
+char** prepare_level_for_safe(const char**, char**);
 
 
 // sqlite3 initialisatie van variabelen en statements
@@ -115,42 +118,11 @@ int prepare_db(void)
 	int rc; // return condition
 	if (db != NULL) {sqlite3_close(db);} // als database al open is, dan sluiten
 	rc = sqlite3_open("levels.db", &db); // open database "levels.db"
-	if (rc) // als het gelukt is
+	if (rc) // als het mislukt is
 	{
-		// database openen mislukt
 		sqlite3_close(db); // resources vrijgeven
 		return 0;
 	}
-	sqlite3_stmt *sqlstmt = NULL; // definitie sqlite statement
-	char* query = "SELECT name FROM sqlite_master WHERE type='table' ORDER BY name;"; // query om lijst met tabellen op te halen
-	const char* left;
-	rc = sqlite3_prepare_v2(db,query,-1,&sqlstmt,&left); // bereid statement voor
-	bool sw = FALSE; // maak switch klaar
-	while (sqlite3_step(sqlstmt) != SQLITE_DONE || sw == FALSE) // loop alle rijen af tot een tabel met de naam levels gevonden is
-	{
-		unsigned char* ret = sqlite3_column_text( sqlstmt, 0 );
-		if ( strcmp((char *)sconvertu2s( ret ), "levels") )
-			sw = TRUE; // zet switch op TRUE
-	}
-	
-	if (sw == FALSE) // tabel "levels" niet gevonden
-	{
-		// TODO: maak tabel "levels" aan
-		/*
-		* structuur van levels
-		* id (integer primary key)
-		* naam (text)
-		* data (BLOB)
-		*/
-		// hergebruik statement
-		strcpy(query,"CREATE TABLE IF NOT EXISTS levels (id INTEGER PRIMARY KEY, naam TEXT,data BLOB);"); // query
-		sqlite3_finalize(sqlstmt);
-		if ( rc )
-		{
-			sqlite3_exec(db,query,NULL,NULL,NULL);
-		} else { return 0; }
-	} else { return 0; }
-	
 	
 	return 1; // 1 = goed (returnwaarde dient voor vergelijking)
 }
@@ -170,11 +142,37 @@ void load_level_list_sqlite(void)
 			levelcount = sqlite3_column_int(statement,0);
 		}
 		
+		sqlite3_finalize(statement);
+		query = "SELECT naam,data FROM levels";
+		
+		if ( sqlite3_prepare_v2(db,query,-1,&statement,&left) == SQLITE_OK )
+		{
+			int i = 0;
+			while (sqlite3_step(statement) != SQLITE_DONE)
+			{
+				char* naam = sconvertu2s(sqlite3_column_text(statement, 0));
+				char** field = (char **)sqlite3_column_blob(statement, 1);
+				i++;
+			}
+		}
+		
 		if (statement != NULL)
 			sqlite3_finalize(statement);
 	} else 
 	{
 		load_level_list(NULL);
+	}
+}
+
+// schrijf de levellijst weg (sqlite)
+void write_level_list_sqlite(void)
+{
+	if (db != NULL)
+	{
+		sqlite3_stmt *statement = NULL;
+	} else
+	{
+		write_level_list(NULL);
 	}
 }
 
@@ -190,17 +188,23 @@ void make_new_level(char* naam)
 
 void draw_field(void) // teken het veld
 {
-	int r, c; // tellers
-	for (r=0;r<playfield.width;r++) // rijen aflopen
+	int r = 0, c = 0; // tellers
+	wclear(display); // wis de huidige inhoud
+	
+	while ( *(*(playfield.field_data+r)+c) ) 
 	{
-		wclear(display); // wis de huidige inhoud
-		wmove(display,r,0); // zet de cursor aan het begin van de rij
-		for (c=0;c<playfield.height;c++) // kolommen aflopen
+		wmove(display,r,0);
+		while ( *(*(playfield.field_data+r)+c) != '\n' )
 		{
-			if (playfield.field_data[r][c] == WALL || playfield.field_data[r][c] == ENDPOINT) // alleen muren en het eindpunt tekenen
-				mvwaddch(display,r,c,playfield.field_data[r][c]);
+			if ( *(*(playfield.field_data+r)+c) == WALL || *(*(playfield.field_data+r)+c) == ENDPOINT )
+			{
+				mvwaddch(display,r,c,*(*(playfield.field_data+r)+c));
+				c++;
+			}
 		}
+		r++;
 	}
+	
 	mvwaddch(display,playerPos.y,playerPos.x,PLAYER); // teken de spelerpositie
 }
 
@@ -208,4 +212,23 @@ void draw_field(void) // teken het veld
 bool validate_playfield(const struct Playfield speelveld)
 {
 	return (speelveld.hasFinish && speelveld.hasStart) && (speelveld.width == speelveld.height * 2);
+}
+
+// level voorbereiden op opslaan
+char** prepare_level_for_safe(const char** field, char** dest)
+{
+	int r, c;
+	dest = (char**)malloc(playfield.width * playfield.height + playfield.height + 1);
+	for (r=0;r<playfield.height;r++)
+	{
+		for (c=0;c<playfield.width;c++)
+		{
+			*(*(dest+r)+c) = *(*(field+r)+c);
+		}
+		*(*(dest+r)+c) = '\n';
+	}
+	
+	*(*(dest+r)+c) = 0;
+	
+	return dest;
 }
