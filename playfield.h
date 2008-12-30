@@ -25,7 +25,7 @@ struct Position
 
 typedef struct
 {
-	char naam[20]; // naam van de level
+	char* naam; // naam van de level
 	int width; // breedte
 	int height; // hoogte
 	WINDOW *win; // venster (weergave)
@@ -48,7 +48,7 @@ bool validate_playfield(PLAYFIELD*);
 int prepare_db(void);
 void load_level_list_sqlite(void);
 void write_level_list_sqlite(void);
-char** prepare_level_for_safe(const char**, char**);
+char** convert_field_for_safe(const char**, char**);
 
 
 // sqlite3 initialisatie van variabelen en statements
@@ -184,7 +184,7 @@ void make_new_level(char* naam)
 	load_playfield(NULL);
 	realloc(levels,(levelcount+1)*sizeof(PLAYFIELD));
 	levelcount++;
-	playfield->naam = naam;
+	playfield->naam = stpcpy(playfield->naam, naam);
 	memcpy(&levels[levelcount],playfield,sizeof(PLAYFIELD));
 }
 
@@ -217,7 +217,7 @@ bool validate_playfield(PLAYFIELD* speelveld)
 }
 
 // level voorbereiden op opslaan
-char** prepare_level_for_safe(const char** field, char** dest)
+char** convert_field_for_safe(const char** field, char** dest)
 {
 	int r, c;
 	dest = (char**)malloc(playfield->width * playfield->height + playfield->height + 1);

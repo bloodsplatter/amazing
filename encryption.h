@@ -1,5 +1,6 @@
-// encryptie
-// afhankelijkheden: screenlib CommonCrypto
+// RC4 encryptie
+// URL: http://en.wikipedia.org/wiki/RC4
+// afhankelijkheden: screenlib charsign
 
 #ifndef _SCREENLIB_
 #include "screenlib.h"
@@ -7,45 +8,39 @@
 #ifndef _ENCRYPTION_
 #define _ENCRYPTION_
 
-#include <CommonCrypto/CommonDigest.h>
 #endif
 #ifndef _CHARSIGN_
 #include "charsign.h"
 #endif
 
-char key[64] = "";
 
-void create_key(void);
-void encrypt(char*,unsigned int);
-void decrypt(char*,unsigned int);
-
-void create_key(void) // maak een sleutel aan
-{
-	unsigned char* data = (unsigned char *)malloc(64*sizeof(unsigned char));
-	unsigned char* md = (unsigned char*)malloc(CC_SHA512_DIGEST_LENGTH*sizeof(unsigned char));
-	int prev, i = 0;
-	
-	for (;i<511;i++)
-	{
-		prev = i==0?0:i-1;
-		*(data+i) = (*(data+prev) << 1) ^ (0xFF << i);
-	}
-	
-	*(data+511) = '\0';
-	md = CC_SHA512(data,512,md);
-	
-	strncpy(key,(char*)sconvertu2s(md),512);
-	
-	free(md);
-	free(data);
+unsigned char S[256];
+unsigned int ei, ej;
+ 
+/* KSA */
+void rc4_init(unsigned char *key, unsigned int key_length) {
+    for (ei = 0; ei < 256; ei++)
+        S[ei] = ei;
+ 
+    for (ei = ej = 0; ei < 256; ei++) {
+        ej = (ej + key[ei % key_length] + S[ei]) & 255;
+ 
+        unsigned char temp = S[ei];
+        S[ei] = S[ej];
+        S[ej] = temp;
+    }
+ 
+    ei = ej = 0;
 }
-
-void encrypt(char* data,unsigned int length)
-{
-	
-}
-
-void decrypt(char* data,unsigned int length)
-{
-	
+ 
+/* PRGA */
+unsigned char rc4_output() {
+    ei = (ei + 1) & 255;
+    ej = (ej + S[ei]) & 255;
+ 
+    unsigned char temp = S[ei];
+    S[ei] = S[ej];
+    S[ej] = temp;
+ 
+    return S[(S[ei] + S[ej]) & 255];
 }
