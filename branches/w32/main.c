@@ -107,7 +107,7 @@ static WINDOW *commandwindow; // in dit venster worden alle shortcuts getoond
 // include eigen headers
 #include "tekst.h"
 #include "playfield.h"
-// not including encryption because cygwin does not know CommonCrypto
+#include "encryption.h"
 #include "editor.h"
 #include "levelselect.h"
 // verwerk invoer
@@ -120,9 +120,9 @@ static void keyb_controll(void)
 			if (curr_char == 'Q')
 				loop = 0;
 			if (curr_char == 'N')
-				load_select_window(FALSE);
+				load_select_window(0);
 			if (curr_char == 'C')
-				load_select_window(TRUE);
+				load_select_window(1);
 		break;
 		case speelveld:
 			if (curr_char == 'Q')
@@ -178,9 +178,8 @@ static void cust_draw_loop(void)
 			
 		break;
 	}
-	wnoutrefresh(commandwindow); // teken het shortcutvenster
-	wnoutrefresh(display); // teken het huidige venster
-	doupdate();
+	wrefresh(commandwindow); // teken het shortcutvenster
+	wrefresh(display); // teken het huidige venster
 }
 
 // functie om de shortcuts in het shortcutvenster te weergeven
@@ -237,7 +236,11 @@ void cust_load(void)
 	hline(ACS_S9,COLS); // teken lijn onder titel
 	DISPLAYMODE = start; // stel displaymodus op startscherm in
 	// TODO: comment the line below when we start loading from levelfiles
-	levels = (struct Playfield *)calloc(sizeof(struct Playfield),2);
+	levels = (PLAYFIELD *)calloc(sizeof(PLAYFIELD),1);
+	if (prepare_db())
+	{
+		load_level_list_sqlite();
+	}
 	load_level_list(NULL);
 }
 
@@ -255,6 +258,8 @@ void free_res(void) // resources vrijgeven
 
 void reload_mainmenu(void) // laad het hoofdmenu terug in
 {
+	wclear(display);
+	wrefresh(display);
 	delwin(display); // geef alle resources van display vrij
 	DISPLAYMODE = start; // stel schermmodus in
 	load_commandwindow(); // laad huidige shortcuts
