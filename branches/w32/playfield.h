@@ -6,7 +6,7 @@
 #define WALL ACS_BLOCK
 #define PLAYER ACS_BULLET
 #define ENDPOINT ACS_CKBOARD
-#define EMPTY 0
+#define EMPTY 0xE
 #include <sqlite3.h>
 #endif
 #ifndef _SCREENLIB_
@@ -36,7 +36,7 @@ typedef struct
 	struct Position endPos;
 } PLAYFIELD; // datastructure met weergaveinfo over het speelveld
 
-PLAYFIELD* playfield, *levels;
+PLAYFIELD* playfield, **levels;
 
 int levelcount = 0;
 // functieprototypes
@@ -49,6 +49,8 @@ int prepare_db(void);
 void load_level_list_sqlite(void);
 void write_level_list_sqlite(void);
 char** convert_field_for_safe(const char**, char**);
+char* level2string(char *,PLAYFIELD *);
+char* map2string(char *, PLAYFIELD *);
 
 
 // sqlite3 initialisatie van variabelen en statements
@@ -59,6 +61,7 @@ void load_playfield(const int* fieldnum)
 {
 	if (fieldnum == NULL) {
 		// voor vierkant: hoogte = breedte / 2
+		playfield = (PLAYFIELD *)malloc(sizeof(PLAYFIELD));
 		playfield->width = 40; playfield->height = 20;
 		playfield->startPos.x = 0;
 		playfield->startPos.y = 0;
@@ -105,12 +108,145 @@ void load_level_list(char* naam)
 	{
 		fscanf(file,"%d",&levelcount); // lees aantal levels in bestand
 		if (levelcount>0) { // geen levels inlezen als deze er niet zijn
-			free(levels); // huidig level geheugen vrijgeven om memory leaks te voorkomen
-			levels = (PLAYFIELD *)calloc(levelcount,sizeof(playfield)); // maak genoeg geheugen vrij
-			fread(levels,sizeof(playfield),levelcount,file); // levels inlezen
+			int i = 0;
+			for (;i<levelcount;i++)
+			{
+				free(levels[i]);
+			}
+			free(levels);
+			levels = (PLAYFIELD **)calloc(levelcount,sizeof(PLAYFIELD *)); // maak genoeg geheugen vrij
+			for (i=0;i<levelcount;i++) {
+				levels[i] = (PLAYFIELD *)malloc(sizeof(PLAYFIELD));
+				 // levels inlezen
+			}
 		}
 		
 	}
+}
+
+// converteer level naar string
+char* level2string(char * outstr, PLAYFIELD* speelveld)
+{
+	/*
+	* --level format--
+	* 0xC ^ OxD
+	* naam
+	* breedte
+	* hoogte
+	* mapdata (tekstueel formaat, meerdere lijnen)
+	* 0xF ^ 0xD => einde mapdata
+	* hasFinish (bool)
+	* hasStart (bool)
+	* startx,starty
+	* eindx,eindy
+	*/
+	if (!outstr)
+		free(outstr);
+	outstr = (char*)calloc(2,sizeof(char));
+	unsigned int loc = 1;
+	outstr[0] = 0xC ^ 0xD; outstr[1] = '\n';
+	
+	outstr = (char*)reallocf(outstr,strlen(speelveld->naam)+4);
+	char* p = speelveld->naam;
+	while (*p)
+	{
+		loc++;
+		outstr[loc] = *p;
+		p++;
+	}
+	loc++;
+	outstr[loc] = 0xFF; loc++;
+	outstr[loc] = '\n'; loc++;
+	
+	char breedte[4] = "", hoogte[4] = "";
+	outstr = (char*)reallocf(outstr,loc+sprintf(breedte,"%d",speelveld->width)+1+sprintf(hoogte,"%d",speelveld->height)+3);
+	p=breedte;
+	while (*p)
+	{
+		outstr[loc] = *p;
+		p++;
+	}
+	loc++;
+	outstr[loc] = '\n';
+	p=hoogte;
+	while (*p)
+	{
+		loc++;
+		outstr[loc] = *p;
+		p++;
+	}
+	loc++;
+	outstr[loc] = '\n';
+	
+	char* map_data = NULL;
+	map_data = map2string(map_data,speelveld);
+	outstr = (char*)reallocf(outstr,loc+(speelveld->width+1)*speelveld->height+3);
+	p=map_data;
+	while (*p)
+	{
+		loc++;
+		outstr[loc] = *p;
+		p++;
+	}
+	loc++;
+	outstr[loc] = '\n'; loc++;
+	outstr[loc] = 0xF ^ 0xD; loc++;
+	outstr[loc] = '\n';
+	
+	outstr = (char*)reallocf(outstr,loc+4);
+	loc++;
+	outstr[loc] = speelveld->hasFinish; loc++;
+	outstr[loc] = '\n'; loc++;
+	outstr[loc] = speelveld->hasStart; loc++;
+	outstr[loc] = '\n';
+	
+	char locxy[7] = "";
+	outstr = (char*)reallocf(outstr,loc+16);
+	sprintf(locxy,"%2d,%2d",speelveld->startPos.x,speelveld->startPos.y);
+	p=locxy;
+	while (*p)
+	{
+		loc++;
+		outstr[loc] = *p;
+		p++;
+	}
+	loc++; outstr[loc]='\n';
+	sprintf(locxy,"%2d,%2d",speelveld->endPos.x,speelveld->endPos.y);
+	p=locxy;
+	while (*p)
+	{
+		loc++;
+		outstr[loc] = *p;
+		p++;
+	}
+	loc++; outstr[loc]='\n';
+	
+	return outstr;
+}
+
+//converteer binaire kaart naar string
+char* map2string(char* dst,PLAYFIELD* speelveld)
+{
+	char** map = speelveld->field_data;
+	char* curline = NULL;
+	int breedte = speelveld->width;
+	int hoogte = speelveld->height;
+	if (!dst)
+		free(dst);
+	dst = (char*)calloc((breedte+1)*hoogte,sizeof(char));
+	int i,j,c=0;
+	for (i=0;i<hoogte;i++)
+	{
+		curline = map[i];
+		for (j=0;j<breedte;j++)
+		{
+			dst[c] = curline[j];
+			c++;
+		}
+		dst[c] = '\n'; c++;
+	}
+	
+	return dst;
 }
 
 // controleer database
@@ -184,6 +320,7 @@ void make_new_level(char* naam)
 	load_playfield(NULL);
 	realloc(levels,(levelcount+1)*sizeof(PLAYFIELD));
 	levelcount++;
+	playfield->naam = (char*)calloc(strlen(naam)+1,sizeof(char));
 	playfield->naam = stpcpy(playfield->naam, naam);
 	memcpy(&levels[levelcount],playfield,sizeof(PLAYFIELD));
 }
