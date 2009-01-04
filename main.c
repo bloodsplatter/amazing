@@ -114,6 +114,7 @@ static WINDOW *commandwindow; // in dit venster worden alle shortcuts getoond
 static void keyb_controll(void)
 {
 	curr_char = getch();
+	_tracef("%d",curr_char);
 	switch (DISPLAYMODE)
 	{
 		case start:
@@ -236,11 +237,8 @@ void cust_load(void)
 	hline(ACS_S9,COLS); // teken lijn onder titel
 	DISPLAYMODE = start; // stel displaymodus op startscherm in
 	// TODO: comment the line below when we start loading from levelfiles
-	levels = (PLAYFIELD *)calloc(sizeof(PLAYFIELD),1);
-	if (prepare_db())
-	{
-		load_level_list_sqlite();
-	}
+	//levels = (PLAYFIELD *)calloc(sizeof(PLAYFIELD),1);
+	
 	load_level_list(NULL);
 }
 

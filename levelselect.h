@@ -45,33 +45,40 @@ void print_choices(void) // zet alle keuzes in het scherm
 	int i = 0;
 	for (;i<levelcount;i++)
 	{
-		mvwprintw(display,i,0,"%c%d)%s",i==current_choice?SELECTOR:0x32,i,levels[i].naam); // print alle namen van levels en de selectiecursor
+		mvwprintw(display,i,0,"%c%d)%s",i==current_choice?SELECTOR:' ',i,levels[i]->naam); // print alle namen van levels en de selectiecursor
 	}
 	if (forEditing)
 	{
-		mvwprintw(display,i,0,"%c%d) %s",i==current_choice?SELECTOR:0x32,i+1,"nieuwe level"); // print ook een nieuwe entry om een level bij te maken
-		mvprintw(0,0,"i=%d choice=%d edit=%d",i,current_choice,forEditing);
+		mvwprintw(display,i,0,"%c:%s",i==current_choice?SELECTOR:' ',"nieuwe level"); // print ook een nieuwe entry om een level bij te maken
+		mvprintw(0,0,"i=%d choice=%d edit=%d",i,current_choice,forEditing); // debug
 	}
 }
 
 void mvselection_down(void) // stel de selectie 1 lager in of ga naar boven als we onderaan zijn
 {
 	wclear(display);
-	current_choice = (current_choice+1>(forEditing?levelcount+1:levelcount))?0:current_choice+1;
+	current_choice = (current_choice+1>levelcount)?levelcount:current_choice+1;
 }
 
 void mvselection_up(void) // stel de selectie 1 hoger in of ga naar beneden als we bovenaan zijn
 {
 	wclear(display);
-	current_choice = (current_choice-1<0)?(forEditing?levelcount+1:levelcount):current_choice-1;
+	current_choice = (current_choice-1<0)?0:current_choice-1;
 }
 
-void level_selected(void) // laat geselecteerde level
+void level_selected(void) // laad geselecteerde level
 {
-	if (current_choice > levelcount && forEditing) // maak nieuwe level aan
+	if ((current_choice > levelcount || !(current_choice && levelcount)) && forEditing) // maak nieuwe level aan
 	{
 		// TODO: haal naam van speelveld op
-		// make_new_playfield(naam); 
+		echo();
+		nocbreak();
+		mvwaddstr(display,levelcount+1,1,"naam level:");
+		char naam[21] = "";
+		wgetnstr(display,naam,20);
+		noecho();
+		cbreak();
+		make_new_level(naam);
 	} else // open geselecteerde level
 	{
 		if (forEditing)
