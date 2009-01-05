@@ -40,188 +40,30 @@ PLAYFIELD* playfield, **levels;
 
 int levelcount = 0;
 // functieprototypes
-void load_playfield(const int*);
-void write_level_list(char*);
-void load_level_list(char*);
+void load_playfield(int);
 void draw_field(void);
 bool validate_playfield(PLAYFIELD*);
 int prepare_db(void);
 void load_level_list_sqlite(void);
 void write_level_list_sqlite(void);
-char** convert_field_for_safe(const char**, char**);
+void make_new_level(const char*,int,int);
 char* level2string(char *,PLAYFIELD *);
 char* map2string(char *, PLAYFIELD *);
+void str2pos(const char*,struct Position);
+char** str2map(const char*,PLAYFIELD*);
 
 
 // sqlite3 initialisatie van variabelen en statements
 sqlite3 *db = NULL;
 
 // code om het speelveld te laden
-void load_playfield(const int* fieldnum)
+void load_playfield(int fieldnum)
 {
-	if (fieldnum == NULL) {
-		// voor vierkant: hoogte = breedte / 2
-		playfield = (PLAYFIELD *)malloc(sizeof(PLAYFIELD));
-		playfield->width = 40; playfield->height = 20;
-		playfield->startPos.x = 0;
-		playfield->startPos.y = 0;
-		playfield->endPos.x = playfield->width - 1;
-		playfield->endPos.y = playfield->height - 1;
-		playfield->hasFinish = FALSE;
-		playfield->hasStart = FALSE;
-		/*
-		* newwin(lines,cols,begin_y,begin_x)
-		* lines = hoogte
-		* cols = breedte
-		* (begin_x,begin_y) = plaats linkerbovenhoek
-		* speelveld wordt gecentreerd getekend, dus altijd schermdimensie/2-velddimensie/2 (+offset)
-		*/
-		playfield->win = newwin(playfield->height,playfield->width,(LINES/2-playfield->height/2),(COLS/2-playfield->height/2)+3); // maak nieuw venster
-	} else {
-		memcpy(&playfield,&levels[*fieldnum],sizeof(playfield)); // kopieer speelveld uit array naar plaats voor huidig speelveld
-		delwin(display); // vorige venstergeheugen vrijgeven
-		display = dupwin(playfield->win); // kopieer het venster naar de tekenbuffer
-		load_commandwindow(); // laad het shortcutvenster opnieuw in
-		DISPLAYMODE = speelveld; // zet displaymodus
-	}
-}
-
-void write_level_list(char* naam) // schrijf de levels weg in een bestand
-{
-	naam = (naam == NULL)?"levels":naam; // optionele argumenten initialiseren
-	FILE *file = NULL; // maak bestandspointer
-	file = fopen("levels","wb"); // open het bestand voor schrijven
-	if (file != NULL) { // als het openen geslaagd is:
-		fprintf(file,"%d\n",levelcount); // schrijf het aantal weg
-		fwrite(levels,sizeof(playfield),levelcount,file); // schrijf de levels array weg
-		fclose(file); // sluit het bestand
-	}
-}
-
-// laad de levellijst in
-void load_level_list(char* naam)
-{
-	naam = (naam == NULL)?"levels":naam; // optionele argumenten initialiseren
-	FILE *file = NULL; // maak bestandspointer
-	file = fopen(naam,"rb"); // open bestand voor lezen
-	if (file != NULL) // als het bestand geopend is:
-	{
-		fscanf(file,"%d",&levelcount); // lees aantal levels in bestand
-		if (levelcount>0) { // geen levels inlezen als deze er niet zijn
-			int i = 0;
-			for (;i<levelcount;i++)
-			{
-				free(levels[i]);
-			}
-			free(levels);
-			levels = (PLAYFIELD **)calloc(levelcount,sizeof(PLAYFIELD *)); // maak genoeg geheugen vrij
-			for (i=0;i<levelcount;i++) {
-				levels[i] = (PLAYFIELD *)malloc(sizeof(PLAYFIELD));
-				 // levels inlezen
-			}
-		}
-		
-	}
-}
-
-// converteer level naar string
-char* level2string(char * outstr, PLAYFIELD* speelveld)
-{
-	/*
-	* --level format--
-	* 0xC ^ OxD
-	* naam
-	* breedte
-	* hoogte
-	* mapdata (tekstueel formaat, meerdere lijnen)
-	* 0xF ^ 0xD => einde mapdata
-	* hasFinish (bool)
-	* hasStart (bool)
-	* startx,starty
-	* eindx,eindy
-	*/
-	if (!outstr)
-		free(outstr);
-	outstr = (char*)calloc(2,sizeof(char));
-	unsigned int loc = 1;
-	outstr[0] = 0xC ^ 0xD; outstr[1] = '\n';
-	
-	outstr = (char*)reallocf(outstr,strlen(speelveld->naam)+4);
-	char* p = speelveld->naam;
-	while (*p)
-	{
-		loc++;
-		outstr[loc] = *p;
-		p++;
-	}
-	loc++;
-	outstr[loc] = 0xFF; loc++;
-	outstr[loc] = '\n'; loc++;
-	
-	char breedte[4] = "", hoogte[4] = "";
-	outstr = (char*)reallocf(outstr,loc+sprintf(breedte,"%d",speelveld->width)+1+sprintf(hoogte,"%d",speelveld->height)+3);
-	p=breedte;
-	while (*p)
-	{
-		outstr[loc] = *p;
-		p++;
-	}
-	loc++;
-	outstr[loc] = '\n';
-	p=hoogte;
-	while (*p)
-	{
-		loc++;
-		outstr[loc] = *p;
-		p++;
-	}
-	loc++;
-	outstr[loc] = '\n';
-	
-	char* map_data = NULL;
-	map_data = map2string(map_data,speelveld);
-	outstr = (char*)reallocf(outstr,loc+(speelveld->width+1)*speelveld->height+3);
-	p=map_data;
-	while (*p)
-	{
-		loc++;
-		outstr[loc] = *p;
-		p++;
-	}
-	loc++;
-	outstr[loc] = '\n'; loc++;
-	outstr[loc] = 0xF ^ 0xD; loc++;
-	outstr[loc] = '\n';
-	
-	outstr = (char*)reallocf(outstr,loc+4);
-	loc++;
-	outstr[loc] = speelveld->hasFinish; loc++;
-	outstr[loc] = '\n'; loc++;
-	outstr[loc] = speelveld->hasStart; loc++;
-	outstr[loc] = '\n';
-	
-	char locxy[7] = "";
-	outstr = (char*)reallocf(outstr,loc+16);
-	sprintf(locxy,"%2d,%2d",speelveld->startPos.x,speelveld->startPos.y);
-	p=locxy;
-	while (*p)
-	{
-		loc++;
-		outstr[loc] = *p;
-		p++;
-	}
-	loc++; outstr[loc]='\n';
-	sprintf(locxy,"%2d,%2d",speelveld->endPos.x,speelveld->endPos.y);
-	p=locxy;
-	while (*p)
-	{
-		loc++;
-		outstr[loc] = *p;
-		p++;
-	}
-	loc++; outstr[loc]='\n';
-	
-	return outstr;
+	playfield = levels[fieldnum]; // kopieer speelveld uit array naar plaats voor huidig speelveld
+	delwin(display); // vorige venstergeheugen vrijgeven
+	display = dupwin(playfield->win); // kopieer het venster naar de tekenbuffer
+	load_commandwindow(); // laad het shortcutvenster opnieuw in
+	DISPLAYMODE = speelveld; // zet displaymodus
 }
 
 //converteer binaire kaart naar string
@@ -262,6 +104,10 @@ int prepare_db(void)
 		return 0;
 	}
 	
+	char* error;
+	char* query = "BEGIN TRANSACTION app;";
+	sqlite3_exec(db,query,NULL,NULL,&error);
+	
 	return 1; // 1 = goed (returnwaarde dient voor vergelijking)
 }
 
@@ -289,7 +135,15 @@ void load_level_list_sqlite(void)
 			while (sqlite3_step(statement) != SQLITE_DONE)
 			{
 				char* naam = sconvertu2s(sqlite3_column_text(statement, 0));
-				char** field = (char **)sqlite3_column_blob(statement, 3);
+				int breedte = sqlite3_column_int(statement,1);
+				int hoogte = sqlite3_column_int(statement,2);
+				make_new_level(naam,hoogte,breedte);
+				char* map_string = (char *)sqlite3_column_blob(statement, 3);
+				char* startstr = sconvertu2s(sqlite3_column_text(statement,4));
+				char* endstr = sconvertu2s(sqlite3_column_text(statement,5));
+				str2pos(startstr, playfield->startPos);
+				str2pos(endstr, playfield->endPos);
+				playfield->field_data = str2map(map_string,playfield);
 				i++;
 			}
 		}
@@ -298,7 +152,7 @@ void load_level_list_sqlite(void)
 			sqlite3_finalize(statement);
 	} else 
 	{
-		load_level_list(NULL);
+		loop = 0;
 	}
 }
 
@@ -308,21 +162,59 @@ void write_level_list_sqlite(void)
 	if (db != NULL)
 	{
 		sqlite3_stmt *statement = NULL;
-	} else
-	{
-		write_level_list(NULL);
 	}
 }
 
-// maak plaats in de levellijst voor een nieuwe level
-void make_new_level(char* naam)
+// maak plaats in de levellijst voor een nieuwe level en steekt de nieuwe level in playfield
+void make_new_level(const char* naam,int hoogte, int breedte)
 {
-	load_playfield(NULL);
-	realloc(levels,(levelcount+1)*sizeof(PLAYFIELD));
+	levels = (PLAYFIELD **)reallocf(levels,(levelcount+1)*sizeof(PLAYFIELD*));
+	levels[levelcount] = (PLAYFIELD *)malloc(sizeof(PLAYFIELD));
+	playfield = levels[levelcount];
 	levelcount++;
+	// voor vierkant: hoogte = breedte / 2
+	hoogte = (hoogte>1)?hoogte:20;
+	breedte = (breedte>1)?breedte:40;
+	playfield->field_data = (char **)calloc(breedte*hoogte,sizeof(char*));
+	int i;
+	for (i=0;i<hoogte;i++)
+	{
+		playfield->field_data[i] = (char*)calloc(breedte,sizeof(char));
+	}
+	playfield->width = breedte; playfield->height = hoogte;
+	playfield->startPos.x = 0;
+	playfield->startPos.y = 0;
+	playfield->endPos.x = playfield->width - 1;
+	playfield->endPos.y = playfield->height - 1;
+	playfield->hasFinish = FALSE;
+	playfield->hasStart = FALSE;
+	/*
+	* newwin(lines,cols,begin_y,begin_x)
+	* lines = hoogte
+	* cols = breedte
+	* (begin_x,begin_y) = plaats linkerbovenhoek
+	* speelveld wordt gecentreerd getekend, dus altijd schermdimensie/2-velddimensie/2 (+offset)
+	*/
+	playfield->win = newwin(playfield->height,playfield->width,(LINES/2-playfield->height/2),(COLS/2-playfield->height/2)+3); // maak nieuw venster
 	playfield->naam = (char*)calloc(strlen(naam)+1,sizeof(char));
 	playfield->naam = stpcpy(playfield->naam, naam);
-	memcpy(&levels[levelcount],playfield,sizeof(PLAYFIELD));
+}
+
+char** str2map(const char* mapstr,PLAYFIELD *speelveld)
+{
+	char** map = speelveld->field_data;
+	char* p = mapstr;
+	int hoogte = speelveld->height;
+	int breedte = speelveld->width;
+	int i,j;
+	
+	for (i=0;i<hoogte;i++)
+	{
+		p += sprintf(map[i],"%[^\n]",p);
+		p += 2;
+	}
+	
+	return map;
 }
 
 void draw_field(void) // teken het veld
@@ -353,21 +245,17 @@ bool validate_playfield(PLAYFIELD* speelveld)
 	return (speelveld->hasFinish && speelveld->hasStart) && (speelveld->width == speelveld->height * 2);
 }
 
-// level voorbereiden op opslaan
-char** convert_field_for_safe(const char** field, char** dest)
+// converteer string naar positie, string in x,y formaat ZONDER SPATIES!!!
+void str2pos(const char* str,struct Position retPos)
 {
-	int r, c;
-	dest = (char**)malloc(playfield->width * playfield->height + playfield->height + 1);
-	for (r=0;r<playfield->height;r++)
-	{
-		for (c=0;c<playfield->width;c++)
-		{
-			*(*(dest+r)+c) = *(*(field+r)+c);
-		}
-		*(*(dest+r)+c) = '\n';
+	retPos.x = 0;
+	retPos.y = 0;
+	char* seeker = strchr(str,',');
+	if (seeker != NULL) {	
+		char* num = (char*)calloc(seeker-str,sizeof(char));
+		num = strncpy(num,str,seeker-str);
+		retPos.x = atoi(num);
+		num = seeker+1;
+		retPos.y = atoi(num);
 	}
-	
-	*(*(dest+r)+c) = 0;
-	
-	return dest;
 }

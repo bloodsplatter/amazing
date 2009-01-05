@@ -187,34 +187,34 @@ static void cust_draw_loop(void)
 void print_shortcuts(void)
 {
 	int i;
-	wmove(commandwindow,1,2); // zet cursor in linkerbovenhoek van venster
+	wmove(commandwindow,1,1); // zet cursor in linkerbovenhoek van venster
 	switch (DISPLAYMODE) { // print de juiste shortcuts
 		case start:
 			for (i=0;i<sizeof(MODE_0_S)/150;i++)
 			{
 				waddstr(commandwindow,MODE_0_S[i]);
-				wmove(commandwindow,i+2,2);
+				waddstr(commandwindow,"| ");
 			}
 		break;
 		case speelveld:
 			for (i=0;i<sizeof(MODE_1_S)/150;i++)
 			{
 				waddstr(commandwindow,MODE_1_S[i]);
-				wmove(commandwindow,i+2,2);
+				waddstr(commandwindow,"| ");
 			}
 		break;
 		case levelbewerker:
 		for (i=0;i<sizeof(MODE_2_S)/150;i++)
 		{
 			waddstr(commandwindow,MODE_2_S[i]);
-			wmove(commandwindow,i+2,2);
+			waddstr(commandwindow,"| ");
 		}
 		break;
 		case levelselectie:
 		for (i=0;i<sizeof(MODE_3_S)/150;i++)
 		{
 			waddstr(commandwindow,MODE_3_S[i]);
-			wmove(commandwindow,i+2,2);
+			waddstr(commandwindow,"| ");
 		}	
 		break;
 	}
@@ -223,7 +223,7 @@ void print_shortcuts(void)
 void load_commandwindow(void)
 {
 	if (commandwindow == NULL)
-		commandwindow = newwin(LINES-3,COLS/5-1,2,1); // maak het scherm dat de shortcuts gaat weergeven
+		commandwindow = newwin(3,COLS,2,0); // maak het scherm dat de shortcuts gaat weergeven
 	else
 		wclear(commandwindow);
 	box(commandwindow,ACS_VLINE,ACS_HLINE); // teken de schermkader
@@ -231,6 +231,11 @@ void load_commandwindow(void)
 
 void cust_load(void)
 {
+	if (color_support == TRUE)
+	{
+		init_pair(1,COLOR_GREEN,COLOR_BLACK);
+		bkgdset(COLOR_BLACK);
+	}
 	mvwaddstr(mainwnd,0,COLS/2-sizeof(GAME_TITLE)/2,GAME_TITLE); // centreer de titel bovenaan in beeld
 	load_commandwindow(); // laad het shortcutvenster
 	move(1,0); // cursor op (0,1) zetten
@@ -239,13 +244,26 @@ void cust_load(void)
 	// TODO: comment the line below when we start loading from levelfiles
 	//levels = (PLAYFIELD *)calloc(sizeof(PLAYFIELD),1);
 	
-	load_level_list(NULL);
+	if (prepare_db())
+		load_level_list_sqlite();
+	else
+		loop = 0;
 }
 
 void free_res(void) // resources vrijgeven
 {
-	write_level_list(NULL);
+	write_level_list_sqlite();
+	
+	char* query = "COMMIT TRANSACTION app;";
+	char* error;
+	sqlite3_exec(db,query,NULL,NULL,&error);
+	
+	int i;
+	for (i=0;i<=levelcount && levelcount > 0;i++)
+		free(levels[i]);
 	free(levels);
+	if (db != NULL)
+		sqlite3_close(db);
 	delwin(display);
 	delwin(commandwindow);
 	// terminal herstellen
