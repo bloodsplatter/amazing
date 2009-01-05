@@ -6,7 +6,7 @@
 #define WALL ACS_BLOCK
 #define PLAYER ACS_BULLET
 #define ENDPOINT ACS_CKBOARD
-#define EMPTY 0xE
+#define EMPTY 32
 #include <sqlite3.h>
 #endif
 #ifndef _SCREENLIB_
@@ -51,7 +51,7 @@ char* level2string(char *,PLAYFIELD *);
 char* map2string(char *, PLAYFIELD *);
 void str2pos(const char*,struct Position);
 char** str2map(const char*,PLAYFIELD*);
-
+char* pos2str(char*,struct Position);
 
 // sqlite3 initialisatie van variabelen en statements
 sqlite3 *db = NULL;
@@ -107,7 +107,7 @@ int prepare_db(void)
 	char* error;
 	char* query = "BEGIN TRANSACTION app;";
 	sqlite3_exec(db,query,NULL,NULL,&error);
-	
+	sqlite3_free(error);
 	return 1; // 1 = goed (returnwaarde dient voor vergelijking)
 }
 
@@ -162,6 +162,31 @@ void write_level_list_sqlite(void)
 	if (db != NULL)
 	{
 		sqlite3_stmt *statement = NULL;
+		const char* left, *query = "UPDATE OR REPLACE INTO levels (naam,breedte,hoogte,data,endpos,startpos) VALUES (?001,?002,?003,?004,?005,?006);";
+		int i;
+		if (sqlite3_prepare_v2(db,query,-1,&statement,&left) == SQLITE_OK)
+		{
+			for (i=0;i<=levelcount && levelcount>0;i++)
+			{
+				playfield = levels[i];
+				sqlite3_bind_text(statement,1,playfield->naam,strlen(playfield->naam),SQLITE_TRANSIENT);
+				sqlite3_bind_int(statement,2,playfield->width);
+				sqlite3_bind_int(statement,3,playfield->height);
+				char* mapstring = NULL;
+				mapstring = map2string(mapstring,playfield);
+				sqlite3_bind_blob(statement,4,mapstring,(playfield->width+1)*playfield->height,SQLITE_TRANSIENT);
+				free(mapstring);
+				char* posstring = NULL;
+				posstring = pos2str(posstring,playfield->startPos);
+				sqlite3_bind_text(statement,5,posstring,strlen(posstring),SQLITE_TRANSIENT);
+				posstring = pos2str(posstring,playfield->endPos);
+				sqlite3_bind_text(statement,6,posstring,strlen(posstring),SQLITE_TRANSIENT);
+				free(posstring);
+				
+				sqlite3_step(statement);
+			}
+		}
+		
 	}
 }
 
@@ -203,7 +228,7 @@ void make_new_level(const char* naam,int hoogte, int breedte)
 char** str2map(const char* mapstr,PLAYFIELD *speelveld)
 {
 	char** map = speelveld->field_data;
-	char* p = mapstr;
+	const char* p = mapstr;
 	int hoogte = speelveld->height;
 	int breedte = speelveld->width;
 	int i,j;
@@ -215,6 +240,17 @@ char** str2map(const char* mapstr,PLAYFIELD *speelveld)
 	}
 	
 	return map;
+}
+
+// functie om van een Position struct een string te maken
+char* pos2str(char* dst, struct Position pos)
+{
+	if (!dst)
+		free(dst);
+	dst = (char*)calloc(strlen(dst),sizeof(char));
+	sprintf(dst,"%d,%d",pos.x,pos.y);
+	
+	return dst;
 }
 
 void draw_field(void) // teken het veld

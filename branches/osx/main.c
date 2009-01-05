@@ -257,6 +257,7 @@ void free_res(void) // resources vrijgeven
 	char* query = "COMMIT TRANSACTION app;";
 	char* error;
 	sqlite3_exec(db,query,NULL,NULL,&error);
+	sqlite3_free(error);
 	
 	int i;
 	for (i=0;i<=levelcount && levelcount > 0;i++)
