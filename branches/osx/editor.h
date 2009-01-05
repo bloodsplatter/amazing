@@ -1,16 +1,25 @@
 // header file voor leveleditor
-// afhankelijkheden: playfield.h
+// afhankelijkheden: playfield
 #ifndef _PLAYFIELD_
 #include "playfield.h"
 #endif
 #ifndef _EDITOR_
 #define _EDITOR_
+#define EDITCURSOR '•'
 #endif
 
 // functieprototypes
-void setStartPosition(int,int);
-void setEndPosition(int,int);
-void setWall(int, int);
+void setStartPosition(void);
+void setEndPosition(void);
+void setWall(void);
+void launchEditor(void);
+
+// cursor beweging functies
+// we gebruiken playerPos om de plaats van de cursor te onthouden
+void edit_mvcurs_up(void);
+void edit_mvcurs_down(void);
+void edit_mvcurs_left(void);
+void edit_mvcurs_right(void);
 
 
 /*
@@ -18,8 +27,39 @@ void setWall(int, int);
 	het huidige speelveld staat in de playfield variabele
 */
 
-void setStartPosition(int y, int x) // stel het beginpunt in
+void launchEditor(void)
 {
+	delwin(display);
+	display = newwin(playfield->height+1,playfield->width+1,6,COLS/2-playfield->width/2);
+	box(display,ACS_VLINE,ACS_HLINE);
+	playerPos.x=0; playerPos.y=0;
+	
+	DISPLAYMODE = levelbewerker;
+}
+
+void edit_mvcurs_up(void)
+{
+	
+}
+
+void edit_mvcurs_down(void)
+{
+	
+}
+
+void edit_mvcurs_left(void)
+{
+	
+}
+
+void edit_mvcurs_right(void)
+{
+	
+}
+
+void setStartPosition(void) // stel het beginpunt in
+{
+	int y=playerPos.y,x=playerPos.x;
 	if (playfield->hasStart == FALSE) // er is nog geen startpunt
 	{
 		playfield->startPos.x = x;
@@ -36,8 +76,9 @@ void setStartPosition(int y, int x) // stel het beginpunt in
 	}
 }
 
-void setEndPosition(int y,int x) // stel eindpunt in
+void setEndPosition(void) // stel eindpunt in
 {
+	int y=playerPos.y,x=playerPos.x;
 	if (playfield->hasFinish == FALSE) // er is nog geen eindpunt
 	{
 		playfield->endPos.x = x;
@@ -54,8 +95,9 @@ void setEndPosition(int y,int x) // stel eindpunt in
 	}
 }
 
-void setWall(int y, int x) // zet muur op huidige plaats
+void setWall(void) // zet muur op huidige plaats
 {
+	int y=playerPos.y,x=playerPos.x;
 	char *curPos = (*(playfield->field_data+y)+x);
 	if (*curPos == WALL)
 	{

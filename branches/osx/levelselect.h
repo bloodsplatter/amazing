@@ -70,15 +70,30 @@ void level_selected(void) // laad geselecteerde level
 {
 	if ((current_choice > levelcount || !(current_choice && levelcount)) && forEditing) // maak nieuwe level aan
 	{
-		// TODO: haal naam van speelveld op
 		echo();
 		nocbreak();
 		mvwaddstr(display,levelcount+1,1,"naam level:");
 		char naam[21] = "";
 		wgetnstr(display,naam,20);
+		mvwaddstr(display,levelcount+2,1,"breedte (20):    ");
+		char strbreedte[5] = "";
+		do {
+			wgetnstr(display,strbreedte,4);
+			if (*strbreedte == '\n') {strbreedte[0] = '2'; strbreedte[1] = '0';}
+			if (!strisnumber(strbreedte)) {mvwaddstr(display,levelcount+2,1,"breedte (20):    "); wmove(display,levelcount+2,strlen("breedte (20): "));}
+		} while (!strisnumber(strbreedte));
+		int breedte = atoi(strbreedte);
+		char strhoogte[5] = "";
+		do {
+			wgetnstr(display,strhoogte,4);
+			if (*strhoogte == '\n') {strhoogte[0] = '1'; strhoogte[1] = '0';}
+			if (!strisnumber(strhoogte)) {mvwaddstr(display,levelcount+2,1,"hoogte (20):    "); wmove(display,levelcount+2,strlen("hoogte (20): "));}
+		} while (!strisnumber(strhoogte));
+		int hoogte = atoi(strhoogte);
 		noecho();
 		cbreak();
-		make_new_level(naam,10,20);
+		make_new_level(naam,hoogte,breedte);
+		launchEditor(); // start de editor op
 	} else // open geselecteerde level
 	{
 		if (forEditing)
