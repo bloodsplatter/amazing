@@ -3,9 +3,9 @@
 // constanten
 #ifndef _PLAYFIELD_
 #define _PLAYFIELD_
-#define WALL ACS_BLOCK
-#define PLAYER ACS_BULLET
-#define ENDPOINT ACS_CKBOARD
+#define WALL 'W'
+#define PLAYER 'P'
+#define ENDPOINT 'E'
 #define EMPTY 32
 #include <sqlite3.h>
 #endif
@@ -168,6 +168,7 @@ void write_level_list_sqlite(void)
 		{
 			for (i=0;i<=levelcount && levelcount>0;i++)
 			{
+				// voeg waarden van speelveld in query in
 				playfield = levels[i];
 				sqlite3_bind_text(statement,1,playfield->naam,strlen(playfield->naam),SQLITE_TRANSIENT);
 				sqlite3_bind_int(statement,2,playfield->width);
@@ -182,11 +183,13 @@ void write_level_list_sqlite(void)
 				posstring = pos2str(posstring,playfield->endPos);
 				sqlite3_bind_text(statement,6,posstring,strlen(posstring),SQLITE_TRANSIENT);
 				free(posstring);
-				
+				// voer query uit
 				sqlite3_step(statement);
 			}
 		}
 		
+		if (statement != NULL)
+			sqlite3_finalize(statement);
 	}
 }
 

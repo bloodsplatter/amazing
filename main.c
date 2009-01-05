@@ -130,7 +130,14 @@ static void keyb_controll(void)
 				reload_mainmenu();
 		break;
 		case levelbewerker:
-			
+			if (curr_char == KEY_UP)
+				edit_mvcurs_up();
+			if (curr_char == KEY_DOWN)
+				edit_mvcurs_down();
+			if (curr_char == KEY_LEFT)
+				edit_mvcurs_left();
+			if (curr_char == KEY_RIGHT)
+				edit_mvcurs_right();
 		break;
 		case levelselectie:
 			if (curr_char == KEY_UP)

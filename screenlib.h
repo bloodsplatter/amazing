@@ -25,6 +25,7 @@ int DISPLAYMODE = start; // display mode switch
 
 void screen_init(void);
 static void draw_loop(void);
+bool strisnumber(const char*);
 
 void screen_init(void) {
 	// omgeving instellen
@@ -48,4 +49,15 @@ static void draw_loop(void)
 {
 	// schermen tekenen
 	refresh();
+}
+
+bool strisnumber(const char* str)
+{
+	const char* p = str;
+	bool ret = FALSE;
+	
+	while (!(*p) && (*p != ' '))
+	{
+		ret = ret && isdigit(*p)?TRUE:FALSE;
+	}
 }
