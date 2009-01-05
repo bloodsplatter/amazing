@@ -3,17 +3,17 @@
 */
 
 const char GAME_TITLE[] = "aMAZing"; // de titel die in de vensters weergeven wordt
-const char MODE_0_S[3][150] = {"Shift + N: nieuw spel",
-							"Shift + Q: afsluiten",
-							"Shift + C: levelbewerker"}; // tekst van de zijbalk (MODUS start)
-const char MODE_1_S[2][150] = {"Shift + Q: naar hoofdmenu",
+const char MODE_0_S[3][150] = {"Shift+N: nieuw spel",
+							"Shift+C: levelbewerker",
+							"Shift+Q: afsluiten"}; // tekst van de zijbalk (MODUS start)
+const char MODE_1_S[2][150] = {"Shift+Q: Hoofdmenu",
 								"Pijltjes: bewegen"}; // tekst van de zijbalk (MODUS speelveld)
-const char MODE_2_S[6][150] = {"Shift + S: Opslaan",
-								"Shift + Q: naar Hoofdmenu",
-								"Pijltjes: bewegen",
+const char MODE_2_S[6][150] = {"Shift+S: Opslaan",
+								"Shift+Q: Hoofdmenu",
+								"Pijltjes: Bewegen",
 								"W: muur aan/afzetten",
 								"X: einde plaatsen",
 								"B: begin plaatsen"}; // tekst van de zijbalk (MODUS levelbewerker)
-const char MODE_3_S[3][150] = {"Shift + Q: naar hoofdmenu",
+const char MODE_3_S[3][150] = {"Shift+Q: Hoofdmenu",
 								"Pijltoetsen: level kiezen",
-								"Enter: levelkeuze bevestigen"}; // tekst van de zijbalk (MODUS levelselectie)
+								"Enter: Bevestigen"}; // tekst van de zijbalk (MODUS levelselectie)

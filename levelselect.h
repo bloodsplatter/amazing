@@ -29,7 +29,7 @@ int current_choice = 0;
 void load_select_window(int edit) // laad het selectiescherm
 {
 	if (menuselect == NULL) { // maak venster leeg
-		menuselect = newwin(LINES/2-3,COLS/2-COLS/4,3,COLS/3); // maak een gecentreerd venster
+		menuselect = newwin(edit?3+levelcount:2+levelcount,COLS/2-COLS/4,5,COLS/3); // maak een gecentreerd venster
 		delwin(display); // vorige venstergeheugen vrijgeven
 		display = dupwin(menuselect); // kopieer venster
 	} else {
@@ -78,7 +78,7 @@ void level_selected(void) // laad geselecteerde level
 		wgetnstr(display,naam,20);
 		noecho();
 		cbreak();
-		make_new_level(naam);
+		make_new_level(naam,10,20);
 	} else // open geselecteerde level
 	{
 		if (forEditing)
