@@ -33,7 +33,7 @@ void screen_init(void) {
 	color_support = has_colors();
 	if (color_support == TRUE)
 		start_color();
-	trace(TRACE_DISABLE);
+	
 	noecho(); // characters niet printen
 	cbreak(); // direct characters doorgeven (geen buffer gebruiken)
 	nodelay(mainwnd, TRUE);

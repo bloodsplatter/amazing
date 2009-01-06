@@ -29,7 +29,7 @@ int current_choice = 0;
 void load_select_window(int edit) // laad het selectiescherm
 {
 	if (menuselect == NULL) { // maak venster leeg
-		menuselect = newwin(edit?3+levelcount:2+levelcount,COLS/2-COLS/4,5,COLS/3); // maak een gecentreerd venster
+		menuselect = newwin(edit?4+levelcount:2+levelcount,COLS/2-COLS/4,5,COLS/3); // maak een gecentreerd venster
 		delwin(display); // vorige venstergeheugen vrijgeven
 		display = dupwin(menuselect); // kopieer venster
 	} else {
@@ -75,21 +75,28 @@ void level_selected(void) // laad geselecteerde level
 		mvwaddstr(display,levelcount+1,1,"naam level:");
 		char naam[21] = "";
 		wgetnstr(display,naam,20);
-		mvwaddstr(display,levelcount+2,1,"breedte (20):    ");
-		char strbreedte[5] = "";
+		mvwaddstr(display,levelcount+2,1,"breedte (20):");
+		int breedte = 0;
 		do {
-			wgetnstr(display,strbreedte,4);
-			if (*strbreedte == '\n') {strbreedte[0] = '2'; strbreedte[1] = '0';}
-			if (!strisnumber(strbreedte)) {mvwaddstr(display,levelcount+2,1,"breedte (20):    "); wmove(display,levelcount+2,strlen("breedte (20): "));}
-		} while (!strisnumber(strbreedte));
-		int breedte = atoi(strbreedte);
-		char strhoogte[5] = "";
+			wscanw(display,"%2d",&breedte);
+			if (breedte<1)
+			{
+				wmove(display,levelcount+2,0);
+				wclrtoeol(display);
+				mvwaddstr(display,levelcount+2,1,"breedte (20):");
+			}
+		} while (breedte<1);
+		mvwaddstr(display,levelcount+3,1,"hoogte (10):");
+		int hoogte = 0;
 		do {
-			wgetnstr(display,strhoogte,4);
-			if (*strhoogte == '\n') {strhoogte[0] = '1'; strhoogte[1] = '0';}
-			if (!strisnumber(strhoogte)) {mvwaddstr(display,levelcount+2,1,"hoogte (20):    "); wmove(display,levelcount+2,strlen("hoogte (20): "));}
-		} while (!strisnumber(strhoogte));
-		int hoogte = atoi(strhoogte);
+			wscanw(display,"%2d",&hoogte);
+			if (hoogte<1)
+			{
+				wmove(display,levelcount+3,0);
+				wclrtoeol(display);
+				mvwaddstr(display,levelcount+3,1,"hoogte (10):");
+			}
+		} while (hoogte<1);
 		noecho();
 		cbreak();
 		make_new_level(naam,hoogte,breedte);

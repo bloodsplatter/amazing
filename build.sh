@@ -7,4 +7,4 @@
 #tekst.h
 
 
-gcc -g -Os -o programmeeropdracht main.c -L/sw/lib/ncurses/ -I/sw/include/ -lncurses_g -L/usr/lib -I/usr/include -lsqlite3 && echo "Build done";
+gcc -g -Os -o programmeeropdracht main.c -L/sw/lib/ncurses/ -I/sw/include/ -lncurses -L/usr/lib -I/usr/include -lsqlite3 && echo "Build done";
