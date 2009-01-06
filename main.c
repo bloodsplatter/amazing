@@ -140,6 +140,14 @@ static void keyb_controll(void)
 				edit_mvcurs_right();
 			if (curr_char == 'Q')
 				reload_mainmenu();
+			if (curr_char == 'w')
+				setWall();
+			if (curr_char == 'x')
+				setEndPosition();
+			if (curr_char == 'b')
+				setStartPosition();
+			if (curr_char == 'S')
+				saveLevel();
 		break;
 		case levelselectie:
 			if (curr_char == KEY_UP)
@@ -258,10 +266,6 @@ void free_res(void) // resources vrijgeven
 {
 	write_level_list_sqlite();
 	
-	char* query = "COMMIT TRANSACTION app;";
-	char* error;
-	sqlite3_exec(db,query,NULL,NULL,&error);
-	sqlite3_free(error);
 	
 	int i;
 	for (i=0;i<=levelcount && levelcount > 0;i++)
