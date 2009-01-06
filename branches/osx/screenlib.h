@@ -3,6 +3,7 @@
 #include <ctype.h>
 #include <stdio.h>
 #include <string.h>
+#include <wchar.h>
 #ifndef _SCREENLIB_
 #define _SCREENLIB_
 #endif

@@ -12,9 +12,6 @@
 #ifndef _SCREENLIB_
 #include "screenlib.h"
 #endif
-#ifndef _CHARSIGN_
-#include "charsign.h"
-#endif
 
 // definities
 struct Position
@@ -42,7 +39,6 @@ int levelcount = 0;
 // functieprototypes
 void load_playfield(int);
 void draw_field(void);
-bool validate_playfield(PLAYFIELD*);
 int prepare_db(void);
 void load_level_list_sqlite(void);
 void write_level_list_sqlite(void);
@@ -104,10 +100,6 @@ int prepare_db(void)
 		return 0;
 	}
 	
-	char* error;
-	char* query = "BEGIN TRANSACTION app;";
-	sqlite3_exec(db,query,NULL,NULL,&error);
-	sqlite3_free(error);
 	return 1; // 1 = goed (returnwaarde dient voor vergelijking)
 }
 
@@ -126,30 +118,38 @@ void load_level_list_sqlite(void)
 			levelcount = sqlite3_column_int(statement,0);
 		}
 		
+		levels = (PLAYFIELD **)calloc(levelcount,sizeof(PLAYFIELD *));
+		
+		
 		sqlite3_finalize(statement);
-		query = "SELECT * FROM levels";
+		if (levelcount > 0) {
+			query = "SELECT * FROM levels;";
 		
-		if ( sqlite3_prepare_v2(db,query,-1,&statement,&left) == SQLITE_OK )
-		{
-			int i = 0;
-			while (sqlite3_step(statement) != SQLITE_DONE)
+			if ( sqlite3_prepare_v2(db,query,-1,&statement,&left) == SQLITE_OK )
 			{
-				char* naam = sconvertu2s(sqlite3_column_text(statement, 0));
-				int breedte = sqlite3_column_int(statement,1);
-				int hoogte = sqlite3_column_int(statement,2);
-				make_new_level(naam,hoogte,breedte);
-				char* map_string = (char *)sqlite3_column_blob(statement, 3);
-				char* startstr = sconvertu2s(sqlite3_column_text(statement,4));
-				char* endstr = sconvertu2s(sqlite3_column_text(statement,5));
-				str2pos(startstr, playfield->startPos);
-				str2pos(endstr, playfield->endPos);
-				playfield->field_data = str2map(map_string,playfield);
-				i++;
+				int i = 0;
+				while (sqlite3_step(statement) != SQLITE_DONE)
+				{
+					levels[i] = (PLAYFIELD *)malloc(sizeof(PLAYFIELD));
+					(levels[i])->naam = (char*)calloc(sqlite3_column_bytes(statement,0),sizeof(char));
+					(levels[i])->naam = (char*)sqlite3_column_text(statement, 0);
+					(levels[i])->width = sqlite3_column_int(statement,1);
+					(levels[i])->height = sqlite3_column_int(statement,2);
+					char* map_string = (char*)calloc(sqlite3_column_bytes(statement,3),sizeof(char));
+					map_string = (char *)sqlite3_column_blob(statement, 3);
+					char* startstr = (char*)sqlite3_column_text(statement,4);
+					char* endstr = (char*)sqlite3_column_text(statement,5);
+					str2pos(startstr, (levels[i])->startPos);
+					str2pos(endstr, (levels[i])->endPos);
+					str2map(map_string,levels[i]);
+					i++;
+					free(map_string);
+				}
 			}
-		}
 		
-		if (statement != NULL)
-			sqlite3_finalize(statement);
+			if (statement != NULL)
+				sqlite3_finalize(statement);
+		}
 	} else 
 	{
 		loop = 0;
@@ -162,11 +162,12 @@ void write_level_list_sqlite(void)
 	if (db != NULL)
 	{
 		sqlite3_stmt *statement = NULL;
-		const char* left, *query = "UPDATE OR REPLACE INTO levels (naam,breedte,hoogte,data,endpos,startpos) VALUES (?001,?002,?003,?004,?005,?006);";
+		const char* left, *query = "INSERT OR REPLACE INTO levels (naam,breedte,hoogte,data,endpos,startpos) VALUES (?001,?002,?003,?004,?005,?006);";
 		int i;
-		if (sqlite3_prepare_v2(db,query,-1,&statement,&left) == SQLITE_OK)
+		int resultcode = sqlite3_prepare_v2(db,query,-1,&statement,&left);
+		if (resultcode == SQLITE_OK)
 		{
-			for (i=0;i<=levelcount && levelcount>0;i++)
+			for (i=0;i<levelcount && levelcount>0;i++)
 			{
 				// voeg waarden van speelveld in query in
 				playfield = levels[i];
@@ -177,7 +178,7 @@ void write_level_list_sqlite(void)
 				mapstring = map2string(mapstring,playfield);
 				sqlite3_bind_blob(statement,4,mapstring,(playfield->width+1)*playfield->height,SQLITE_TRANSIENT);
 				free(mapstring);
-				char* posstring = NULL;
+				char* posstring;
 				posstring = pos2str(posstring,playfield->startPos);
 				sqlite3_bind_text(statement,5,posstring,strlen(posstring),SQLITE_TRANSIENT);
 				posstring = pos2str(posstring,playfield->endPos);
@@ -185,6 +186,7 @@ void write_level_list_sqlite(void)
 				free(posstring);
 				// voer query uit
 				sqlite3_step(statement);
+				//mvwprintw(stdscr,0,LINES,"%s%*c",left,COLS-strlen(left),' ');
 			}
 		}
 		
@@ -204,10 +206,17 @@ void make_new_level(const char* naam,int hoogte, int breedte)
 	hoogte = (hoogte>1)?hoogte:20;
 	breedte = (breedte>1)?breedte:40;
 	playfield->field_data = (char **)calloc(breedte*hoogte,sizeof(char*));
-	int i;
+	int i,j;
 	for (i=0;i<hoogte;i++)
 	{
 		playfield->field_data[i] = (char*)calloc(breedte,sizeof(char));
+	}
+	for (i=0;i<hoogte;i++)
+	{
+		for (j=0;j<breedte;j++)
+		{
+			playfield->field_data[i][j] = WALL;
+		}
 	}
 	playfield->width = breedte; playfield->height = hoogte;
 	playfield->startPos.x = 0;
@@ -225,7 +234,7 @@ void make_new_level(const char* naam,int hoogte, int breedte)
 	*/
 	playfield->win = newwin(playfield->height,playfield->width,(LINES/2-playfield->height/2),(COLS/2-playfield->height/2)+3); // maak nieuw venster
 	playfield->naam = (char*)calloc(strlen(naam)+1,sizeof(char));
-	playfield->naam = stpcpy(playfield->naam, naam);
+	playfield->naam = strcpy(playfield->naam, naam);
 }
 
 char** str2map(const char* mapstr,PLAYFIELD *speelveld)
@@ -234,10 +243,14 @@ char** str2map(const char* mapstr,PLAYFIELD *speelveld)
 	const char* p = mapstr;
 	int hoogte = speelveld->height;
 	int breedte = speelveld->width;
-	int i,j;
+	int i,j,c = 0;
 	
-	for (i=0;i<hoogte;i++)
+	map = (char **)calloc(hoogte,sizeof(char*));
+	
+	for (i=0;i<hoogte && isprint(*p);i++)
 	{
+		c = sscanf(p,"%*[^\n]");
+		map[i] = (char*)calloc(c,sizeof(char));
 		p += sprintf(map[i],"%[^\n]",p);
 		p += 2;
 	}
@@ -250,7 +263,7 @@ char* pos2str(char* dst, struct Position pos)
 {
 	if (!dst)
 		free(dst);
-	dst = (char*)calloc(strlen(dst),sizeof(char));
+	dst = (char*)calloc(7,sizeof(char));
 	sprintf(dst,"%d,%d",pos.x,pos.y);
 	
 	return dst;
@@ -278,11 +291,6 @@ void draw_field(void) // teken het veld
 	mvwaddch(display,playerPos.y,playerPos.x,PLAYER); // teken de spelerpositie
 }
 
-// functie om te bepalen of een speelveld klaar is om gespeeld te worde
-bool validate_playfield(PLAYFIELD* speelveld)
-{
-	return (speelveld->hasFinish && speelveld->hasStart) && (speelveld->width == speelveld->height * 2);
-}
 
 // converteer string naar positie, string in x,y formaat ZONDER SPATIES!!!
 void str2pos(const char* str,struct Position retPos)

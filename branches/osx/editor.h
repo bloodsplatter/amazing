@@ -14,6 +14,7 @@ void setEndPosition(void);
 void setWall(void);
 void launchEditor(void);
 void edit_draw_field(void);
+void saveLevel(void);
 
 // cursor beweging functies
 // we gebruiken playerPos om de plaats van de cursor te onthouden
@@ -21,6 +22,8 @@ void edit_mvcurs_up(void);
 void edit_mvcurs_down(void);
 void edit_mvcurs_left(void);
 void edit_mvcurs_right(void);
+
+bool changeOcurred = TRUE;
 
 
 /*
@@ -30,10 +33,12 @@ void edit_mvcurs_right(void);
 
 void launchEditor(void)
 {
+	wclear(display);
+	wrefresh(display);
 	delwin(display);
 	display = newwin(playfield->height+2,playfield->width+2,6,COLS/2-playfield->width/2);
 	box(display,ACS_VLINE,ACS_HLINE);
-	//playerPos.x=1; playerPos.y=1;
+	playerPos.x=1; playerPos.y=1;
 	
 	DISPLAYMODE = levelbewerker;
 	load_commandwindow();
@@ -41,84 +46,107 @@ void launchEditor(void)
 
 void edit_mvcurs_up(void)
 {
-	
+	if (!(playerPos.y-1 < 1))
+		playerPos.y--;
+		
+	changeOcurred = TRUE;
 }
 
 void edit_mvcurs_down(void)
 {
-	
+	if (!(playerPos.y+1 > playfield->height))
+		playerPos.y++;
+		
+	changeOcurred = TRUE;
 }
 
 void edit_mvcurs_left(void)
 {
+	if (!(playerPos.x-1 < 1))
+		playerPos.x--;
 	
+	changeOcurred = TRUE;
 }
 
 void edit_mvcurs_right(void)
 {
+	if (!(playerPos.x+1 > playfield->width))
+		playerPos.x++;
 	
+	changeOcurred = TRUE;
 }
 
 void edit_draw_field(void) // teken het veld
 {
-	int r, c; // tellers
-	wclear(display); // wis de huidige inhoud
-	box(display,ACS_VLINE,ACS_HLINE);
-	
-	for (r=0;r<playfield->width;r++)
-	{
-		for (c=0;r<playfield->height;c++)
+	if (changeOcurred == TRUE) {
+		int r, c; // tellers
+		wclear(display); // wis de huidige inhoud
+		box(display,ACS_VLINE,ACS_HLINE);
+		int breedte, hoogte;
+		
+		for (hoogte=0;hoogte<playfield->height;hoogte++)
 		{
-			mvwaddch(display,1+r,1+c,playfield->field_data[r][c]);
+			char* curline = (playfield->field_data)[hoogte];
+			for (breedte=0;breedte<playfield->width;breedte++)
+			{
+				mvwaddch(display,1+hoogte,1+breedte,curline[breedte]);
+			}
 		}
+		
+		mvwaddch(display,playerPos.y,playerPos.x,EDITCURSOR); // teken de spelerpositie
+		changeOcurred = FALSE;
 	}
 	
-	mvwaddch(display,playerPos.y,playerPos.x,EDITCURSOR); // teken de spelerpositie
-	mvprintw(0,0,"drawing");
 }
 
 void setStartPosition(void) // stel het beginpunt in
 {
-	int y=playerPos.y,x=playerPos.x;
+	int y=playerPos.y-1,x=playerPos.x-1;
 	if (playfield->hasStart == FALSE) // er is nog geen startpunt
 	{
 		playfield->startPos.x = x;
 		playfield->startPos.y = y;
-		*(*(playfield->field_data+x)+y) = PLAYER;
+		(playfield->field_data)[y][x] = PLAYER;
 		playfield->hasStart = TRUE;
+		changeOcurred = TRUE;
 	}
 	else // verwissel startpunt
 	{
-		playfield->field_data[playfield->startPos.x][playfield->startPos.y] = WALL;
+		playfield->field_data[playfield->startPos.y][playfield->startPos.x] = WALL;
 		playfield->startPos.x = x;
 		playfield->startPos.y = y;
-		*(*(playfield->field_data+x)+y) = PLAYER;
+		(playfield->field_data)[y][x] = PLAYER;
+		changeOcurred = TRUE;
 	}
+	
 }
 
 void setEndPosition(void) // stel eindpunt in
 {
-	int y=playerPos.y,x=playerPos.x;
+	int y=playerPos.y-1,x=playerPos.x-1;
 	if (playfield->hasFinish == FALSE) // er is nog geen eindpunt
 	{
 		playfield->endPos.x = x;
 		playfield->endPos.y = y;
-		playfield->field_data[x][y] = ENDPOINT;
+		playfield->field_data[y][x] = ENDPOINT;
 		playfield->hasFinish = TRUE;
+		changeOcurred = TRUE;
 	}
-	else // verwissel eindpunt
+	else if (playfield->hasFinish == TRUE)
 	{
-		playfield->field_data[playfield->endPos.x][playfield->endPos.y] = WALL;
+		playfield->field_data[playfield->endPos.y][playfield->endPos.x] = WALL;
 		playfield->endPos.x = x;
 		playfield->endPos.y = y;
-		*(*(playfield->field_data+x)+y) = ENDPOINT;
+		(playfield->field_data)[y][x] = ENDPOINT;
+		changeOcurred = TRUE;
 	}
+	
 }
 
 void setWall(void) // zet muur op huidige plaats
 {
-	int y=playerPos.y,x=playerPos.x;
-	char *curPos = (*(playfield->field_data+x)+y);
+	int y=playerPos.y-1,x=playerPos.x-1;
+	char *curPos = (*(playfield->field_data+y)+x);
 	if (*curPos == WALL)
 	{
 		*curPos = EMPTY;
@@ -133,5 +161,14 @@ void setWall(void) // zet muur op huidige plaats
 	{
 		playfield->hasStart = FALSE;
 		*curPos = WALL;
+	}
+	changeOcurred = TRUE;
+}
+
+void saveLevel(void)
+{
+	if (playfield->hasFinish == TRUE && playfield->hasStart == TRUE)
+	{
+		write_level_list_sqlite();	
 	}
 }

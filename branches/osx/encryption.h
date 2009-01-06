@@ -9,9 +9,6 @@
 #define _ENCRYPTION_
 
 #endif
-#ifndef _CHARSIGN_
-#include "charsign.h"
-#endif
 
 // S-box
 unsigned char Sb[16][16] = {{99,124,119,123,242,107,111,197, 48,  1,103, 43,254,215,171,118},
