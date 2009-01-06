@@ -110,11 +110,11 @@ static WINDOW *commandwindow; // in dit venster worden alle shortcuts getoond
 #include "encryption.h"
 #include "editor.h"
 #include "levelselect.h"
+
 // verwerk invoer
 static void keyb_controll(void)
 {
 	curr_char = getch();
-	_tracef("%d",curr_char);
 	switch (DISPLAYMODE)
 	{
 		case start:
@@ -138,6 +138,8 @@ static void keyb_controll(void)
 				edit_mvcurs_left();
 			if (curr_char == KEY_RIGHT)
 				edit_mvcurs_right();
+			if (curr_char == 'Q')
+				reload_mainmenu();
 		break;
 		case levelselectie:
 			if (curr_char == KEY_UP)
@@ -158,12 +160,6 @@ static void update_loop(void)
 {
 	curs_set(0);
 	keyb_controll();
-	switch (DISPLAYMODE)
-	{
-		case speelveld:
-			wmove(display,playerPos.y,playerPos.x);
-		break;
-	}
 	print_shortcuts(); // schrijf de shortcuts weg
 }
 
@@ -174,13 +170,14 @@ static void cust_draw_loop(void)
 	switch (DISPLAYMODE)
 	{
 		case start:
+			delwin(display);
 			display = NULL;
 		break;
 		case levelselectie:
 			print_choices();
 		break;
 		case levelbewerker:
-			draw_field();
+			edit_draw_field();
 		break;
 		case speelveld:
 			
@@ -273,6 +270,8 @@ void free_res(void) // resources vrijgeven
 	if (db != NULL)
 		sqlite3_close(db);
 	delwin(display);
+	wclear(commandwindow);
+	wrefresh(commandwindow);
 	delwin(commandwindow);
 	// terminal herstellen
 	curs_set(1);
