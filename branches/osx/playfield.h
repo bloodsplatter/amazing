@@ -22,6 +22,7 @@ struct Position
 
 typedef struct
 {
+	int id;
 	char* naam; // naam van de level
 	int width; // breedte
 	int height; // hoogte
@@ -45,7 +46,7 @@ void write_level_list_sqlite(void);
 void make_new_level(const char*,int,int);
 char* level2string(char *,PLAYFIELD *);
 char* map2string(char *, PLAYFIELD *);
-void str2pos(const char*,struct Position);
+void str2pos(const char*,PLAYFIELD *,int);
 char** str2map(const char*,PLAYFIELD*);
 char* pos2str(char*,struct Position);
 
@@ -131,16 +132,21 @@ void load_level_list_sqlite(void)
 				while (sqlite3_step(statement) != SQLITE_DONE)
 				{
 					levels[i] = (PLAYFIELD *)malloc(sizeof(PLAYFIELD));
-					(levels[i])->naam = (char*)calloc(sqlite3_column_bytes(statement,0),sizeof(char));
-					(levels[i])->naam = (char*)sqlite3_column_text(statement, 0);
-					(levels[i])->width = sqlite3_column_int(statement,1);
-					(levels[i])->height = sqlite3_column_int(statement,2);
-					char* map_string = (char*)calloc(sqlite3_column_bytes(statement,3),sizeof(char));
-					map_string = (char *)sqlite3_column_blob(statement, 3);
-					char* startstr = (char*)sqlite3_column_text(statement,4);
-					char* endstr = (char*)sqlite3_column_text(statement,5);
-					str2pos(startstr, (levels[i])->startPos);
-					str2pos(endstr, (levels[i])->endPos);
+					(levels[i])->id = sqlite3_column_int(statement,0);
+					int stringlen = sqlite3_column_bytes(statement,1);
+					(levels[i])->naam = (char*)calloc(stringlen,sizeof(char));
+					memcpy((levels[i])->naam,(char*)sqlite3_column_text(statement, 1),stringlen);
+					(levels[i])->width = sqlite3_column_int(statement,2);
+					(levels[i])->height = sqlite3_column_int(statement,3);
+					stringlen = sqlite3_column_bytes(statement,4);
+					char* map_string = (char*)calloc(stringlen,sizeof(char));
+					memcpy(map_string,(char *)sqlite3_column_blob(statement, 4),stringlen);
+					char* startstr = (char*)sqlite3_column_text(statement,5);
+					char* endstr = (char*)sqlite3_column_text(statement,6);
+					(levels[i])->hasFinish = TRUE;
+					(levels[i])->hasStart = TRUE;
+					str2pos(startstr, levels[i],0);
+					str2pos(endstr, levels[i],1);
 					str2map(map_string,levels[i]);
 					i++;
 					free(map_string);
@@ -161,8 +167,9 @@ void write_level_list_sqlite(void)
 {
 	if (db != NULL)
 	{
+		PLAYFIELD* current = playfield;
 		sqlite3_stmt *statement = NULL;
-		const char* left, *query = "INSERT OR REPLACE INTO levels (naam,breedte,hoogte,data,endpos,startpos) VALUES (?001,?002,?003,?004,?005,?006);";
+		const char* left, *query = "INSERT OR REPLACE INTO levels (id,naam,breedte,hoogte,data,endpos,startpos) VALUES (?001,?002,?003,?004,?005,?006,?007);";
 		int i;
 		int resultcode = sqlite3_prepare_v2(db,query,-1,&statement,&left);
 		if (resultcode == SQLITE_OK)
@@ -171,28 +178,32 @@ void write_level_list_sqlite(void)
 			{
 				// voeg waarden van speelveld in query in
 				playfield = levels[i];
-				sqlite3_bind_text(statement,1,playfield->naam,strlen(playfield->naam),SQLITE_TRANSIENT);
-				sqlite3_bind_int(statement,2,playfield->width);
-				sqlite3_bind_int(statement,3,playfield->height);
+				sqlite3_bind_int(statement,1,playfield->id);
+				sqlite3_bind_text(statement,2,playfield->naam,strlen(playfield->naam),SQLITE_TRANSIENT);
+				sqlite3_bind_int(statement,3,playfield->width);
+				sqlite3_bind_int(statement,4,playfield->height);
 				char* mapstring = NULL;
 				mapstring = map2string(mapstring,playfield);
-				sqlite3_bind_blob(statement,4,mapstring,(playfield->width+1)*playfield->height,SQLITE_TRANSIENT);
+				sqlite3_bind_blob(statement,5,mapstring,(playfield->width+1)*playfield->height,SQLITE_TRANSIENT);
 				free(mapstring);
 				char* posstring;
 				posstring = pos2str(posstring,playfield->startPos);
-				sqlite3_bind_text(statement,5,posstring,strlen(posstring),SQLITE_TRANSIENT);
-				posstring = pos2str(posstring,playfield->endPos);
 				sqlite3_bind_text(statement,6,posstring,strlen(posstring),SQLITE_TRANSIENT);
+				posstring = pos2str(posstring,playfield->endPos);
+				sqlite3_bind_text(statement,7,posstring,strlen(posstring),SQLITE_TRANSIENT);
 				free(posstring);
 				// voer query uit
 				sqlite3_step(statement);
-				//mvwprintw(stdscr,0,LINES,"%s%*c",left,COLS-strlen(left),' ');
+				sqlite3_reset(statement);
 			}
 		}
 		
 		if (statement != NULL)
 			sqlite3_finalize(statement);
+			
+		playfield = current;
 	}
+	
 }
 
 // maak plaats in de levellijst voor een nieuwe level en steekt de nieuwe level in playfield
@@ -201,7 +212,7 @@ void make_new_level(const char* naam,int hoogte, int breedte)
 	levels = (PLAYFIELD **)reallocf(levels,(levelcount+1)*sizeof(PLAYFIELD*));
 	levels[levelcount] = (PLAYFIELD *)malloc(sizeof(PLAYFIELD));
 	playfield = levels[levelcount];
-	levelcount++;
+	playfield->id = ++levelcount;
 	// voor vierkant: hoogte = breedte / 2
 	hoogte = (hoogte>1)?hoogte:20;
 	breedte = (breedte>1)?breedte:40;
@@ -237,25 +248,27 @@ void make_new_level(const char* naam,int hoogte, int breedte)
 	playfield->naam = strcpy(playfield->naam, naam);
 }
 
+// converteer string naar map
 char** str2map(const char* mapstr,PLAYFIELD *speelveld)
 {
-	char** map = speelveld->field_data;
+	speelveld->field_data = NULL;
 	const char* p = mapstr;
 	int hoogte = speelveld->height;
 	int breedte = speelveld->width;
 	int i,j,c = 0;
 	
-	map = (char **)calloc(hoogte,sizeof(char*));
+	speelveld->field_data = (char **)calloc(hoogte,sizeof(char*));
 	
 	for (i=0;i<hoogte && isprint(*p);i++)
 	{
-		c = sscanf(p,"%*[^\n]");
-		map[i] = (char*)calloc(c,sizeof(char));
-		p += sprintf(map[i],"%[^\n]",p);
-		p += 2;
+		c = strchr(p,'\n') - 1 - p;
+		*(strchr(p,'\n')) = '\0';
+		p += asprintf(speelveld->field_data+i,"%s",p);
+		p++;
 	}
 	
-	return map;
+	
+	return speelveld->field_data;
 }
 
 // functie om van een Position struct een string te maken
@@ -293,16 +306,22 @@ void draw_field(void) // teken het veld
 
 
 // converteer string naar positie, string in x,y formaat ZONDER SPATIES!!!
-void str2pos(const char* str,struct Position retPos)
+void str2pos(const char* str,PLAYFIELD * speelveld,int flag)
 {
-	retPos.x = 0;
-	retPos.y = 0;
+	struct Position* retPos = NULL;
+	if (flag==0)
+		retPos = &(speelveld->startPos);
+	else if (flag==1)
+		retPos = &(speelveld->endPos);
+		
+	retPos->x = 0;
+	retPos->y = 0;
 	char* seeker = strchr(str,',');
 	if (seeker != NULL) {	
 		char* num = (char*)calloc(seeker-str,sizeof(char));
 		num = strncpy(num,str,seeker-str);
-		retPos.x = atoi(num);
+		retPos->x = atoi(num);
 		num = seeker+1;
-		retPos.y = atoi(num);
+		retPos->y = atoi(num);
 	}
 }

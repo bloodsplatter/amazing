@@ -140,11 +140,11 @@ static void keyb_controll(void)
 				edit_mvcurs_right();
 			if (curr_char == 'Q')
 				reload_mainmenu();
-			if (curr_char == 'w')
+			if (curr_char == 'a')
 				setWall();
-			if (curr_char == 'x')
+			if (curr_char == 'z')
 				setEndPosition();
-			if (curr_char == 'b')
+			if (curr_char == 'e')
 				setStartPosition();
 			if (curr_char == 'S')
 				saveLevel();
@@ -248,10 +248,7 @@ void cust_load(void)
 		init_pair(1,COLOR_GREEN,COLOR_BLACK);
 		bkgdset(COLOR_BLACK);
 	}
-	mvwaddstr(mainwnd,0,COLS/2-sizeof(GAME_TITLE)/2,GAME_TITLE); // centreer de titel bovenaan in beeld
-	load_commandwindow(); // laad het shortcutvenster
-	move(1,0); // cursor op (0,1) zetten
-	hline(ACS_S9,COLS); // teken lijn onder titel
+
 	DISPLAYMODE = start; // stel displaymodus op startscherm in
 	// TODO: comment the line below when we start loading from levelfiles
 	//levels = (PLAYFIELD *)calloc(sizeof(PLAYFIELD),1);
@@ -260,6 +257,12 @@ void cust_load(void)
 		load_level_list_sqlite();
 	else
 		loop = 0;
+	
+	clear();
+	mvwaddstr(mainwnd,0,COLS/2-sizeof(GAME_TITLE)/2,GAME_TITLE); // centreer de titel bovenaan in beeld
+	load_commandwindow(); // laad het shortcutvenster
+	move(1,0); // cursor op (0,1) zetten
+	hline(ACS_S9,COLS); // teken lijn onder titel
 }
 
 void free_res(void) // resources vrijgeven
@@ -273,10 +276,16 @@ void free_res(void) // resources vrijgeven
 	free(levels);
 	if (db != NULL)
 		sqlite3_close(db);
-	delwin(display);
+	
 	wclear(commandwindow);
-	wrefresh(commandwindow);
 	delwin(commandwindow);
+	if (display!=NULL)
+	{
+		wclear(display);
+		delwin(display);
+	}
+	clear();
+	refresh();
 	// terminal herstellen
 	curs_set(1);
 	echo();

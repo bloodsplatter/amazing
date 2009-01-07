@@ -28,7 +28,7 @@ int current_choice = 0;
 
 void load_select_window(int edit) // laad het selectiescherm
 {
-	if (menuselect == NULL) { // maak venster leeg
+	if (menuselect == NULL || display == NULL) { // maak venster leeg
 		menuselect = newwin(edit?4+levelcount:2+levelcount,COLS/2-COLS/4,5,COLS/3); // maak een gecentreerd venster
 		delwin(display); // vorige venstergeheugen vrijgeven
 		display = dupwin(menuselect); // kopieer venster
@@ -37,6 +37,7 @@ void load_select_window(int edit) // laad het selectiescherm
 	}
 	forEditing = edit; // set the editing boolean
 	DISPLAYMODE = levelselectie; // zet displaymodus
+	load_level_list_sqlite();
 	load_commandwindow();
 }
 
@@ -49,8 +50,7 @@ void print_choices(void) // zet alle keuzes in het scherm
 	}
 	if (forEditing)
 	{
-		mvwprintw(display,i,0,"%c:%s",i==current_choice?SELECTOR:' ',"nieuwe level"); // print ook een nieuwe entry om een level bij te maken
-		mvprintw(0,0,"i=%d choice=%d edit=%d",i,current_choice,forEditing); // debug
+		mvwprintw(display,i,0,"%c  :%s",i==current_choice?SELECTOR:' ',"nieuwe level"); // print ook een nieuwe entry om een level bij te maken
 	}
 }
 
@@ -68,17 +68,21 @@ void mvselection_up(void) // stel de selectie 1 hoger in of ga naar beneden als 
 
 void level_selected(void) // laad geselecteerde level
 {
-	if ((current_choice > levelcount || !(current_choice && levelcount)) && forEditing) // maak nieuwe level aan
+	if ((current_choice > levelcount - 1 || !levelcount) && forEditing) // maak nieuwe level aan
 	{
 		echo();
 		nocbreak();
 		mvwaddstr(display,levelcount+1,1,"naam level:");
 		char naam[21] = "";
+		curs_set(1);
 		wgetnstr(display,naam,20);
+		curs_set(0);
 		mvwaddstr(display,levelcount+2,1,"breedte (20):");
 		int breedte = 0;
 		do {
+			curs_set(1);
 			wscanw(display,"%2d",&breedte);
+			curs_set(0);
 			if (breedte<1)
 			{
 				wmove(display,levelcount+2,0);
@@ -89,7 +93,9 @@ void level_selected(void) // laad geselecteerde level
 		mvwaddstr(display,levelcount+3,1,"hoogte (10):");
 		int hoogte = 0;
 		do {
+			curs_set(1);
 			wscanw(display,"%2d",&hoogte);
+			curs_set(0);
 			if (hoogte<1)
 			{
 				wmove(display,levelcount+3,0);
@@ -97,6 +103,7 @@ void level_selected(void) // laad geselecteerde level
 				mvwaddstr(display,levelcount+3,1,"hoogte (10):");
 			}
 		} while (hoogte<1);
+		curs_set(0); // voor de veiligheid :P
 		noecho();
 		cbreak();
 		make_new_level(naam,hoogte,breedte);
@@ -105,7 +112,8 @@ void level_selected(void) // laad geselecteerde level
 	{
 		if (forEditing)
 		{
-			// laad levelbewerker met huidige level in
+			playfield = levels[current_choice];
+			launchEditor();
 		} else 
 		{
 			// start huidige level
