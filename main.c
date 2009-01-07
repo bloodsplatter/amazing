@@ -110,6 +110,7 @@ static WINDOW *commandwindow; // in dit venster worden alle shortcuts getoond
 #include "encryption.h"
 #include "editor.h"
 #include "levelselect.h"
+#include "game.h"
 
 // verwerk invoer
 static void keyb_controll(void)
