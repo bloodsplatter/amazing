@@ -11,9 +11,9 @@ const char MODE_1_S[2][150] = {"Shift+Q: Hoofdmenu",
 const char MODE_2_S[6][150] = {"Shift+S: Opslaan",
 								"Shift+Q: Hoofdmenu",
 								"Pijltjes: Bewegen",
-								"W: muur aan/afzetten",
-								"X: einde plaatsen",
-								"B: begin plaatsen"}; // tekst van de zijbalk (MODUS levelbewerker)
+								"A: muur aan/afzetten",
+								"Z: einde plaatsen",
+								"E: begin plaatsen"}; // tekst van de zijbalk (MODUS levelbewerker)
 const char MODE_3_S[3][150] = {"Shift+Q: Hoofdmenu",
 								"Pijltoetsen: level kiezen",
 								"Enter: Bevestigen"}; // tekst van de zijbalk (MODUS levelselectie)

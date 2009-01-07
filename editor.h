@@ -39,7 +39,7 @@ void launchEditor(void)
 	display = newwin(playfield->height+2,playfield->width+2,6,COLS/2-playfield->width/2);
 	box(display,ACS_VLINE,ACS_HLINE);
 	playerPos.x=1; playerPos.y=1;
-	
+	changeOcurred = TRUE;
 	DISPLAYMODE = levelbewerker;
 	load_commandwindow();
 }
@@ -79,14 +79,14 @@ void edit_mvcurs_right(void)
 void edit_draw_field(void) // teken het veld
 {
 	if (changeOcurred == TRUE) {
-		int r, c; // tellers
 		wclear(display); // wis de huidige inhoud
 		box(display,ACS_VLINE,ACS_HLINE);
 		int breedte, hoogte;
 		
+		
 		for (hoogte=0;hoogte<playfield->height;hoogte++)
 		{
-			char* curline = (playfield->field_data)[hoogte];
+			char* curline = playfield->field_data[hoogte];
 			for (breedte=0;breedte<playfield->width;breedte++)
 			{
 				mvwaddch(display,1+hoogte,1+breedte,curline[breedte]);
@@ -106,7 +106,7 @@ void setStartPosition(void) // stel het beginpunt in
 	{
 		playfield->startPos.x = x;
 		playfield->startPos.y = y;
-		(playfield->field_data)[y][x] = PLAYER;
+		playfield->field_data[y][x] = PLAYER;
 		playfield->hasStart = TRUE;
 		changeOcurred = TRUE;
 	}
@@ -115,7 +115,7 @@ void setStartPosition(void) // stel het beginpunt in
 		playfield->field_data[playfield->startPos.y][playfield->startPos.x] = WALL;
 		playfield->startPos.x = x;
 		playfield->startPos.y = y;
-		(playfield->field_data)[y][x] = PLAYER;
+		playfield->field_data[y][x] = PLAYER;
 		changeOcurred = TRUE;
 	}
 	
@@ -137,7 +137,7 @@ void setEndPosition(void) // stel eindpunt in
 		playfield->field_data[playfield->endPos.y][playfield->endPos.x] = WALL;
 		playfield->endPos.x = x;
 		playfield->endPos.y = y;
-		(playfield->field_data)[y][x] = ENDPOINT;
+		playfield->field_data[y][x] = ENDPOINT;
 		changeOcurred = TRUE;
 	}
 	
