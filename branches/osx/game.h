@@ -15,3 +15,5 @@ void player_up(void);
 void player_right(void);
 void player_left(void);
 void player_down(void);
+void endGame(void);
+
