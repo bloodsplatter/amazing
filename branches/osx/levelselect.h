@@ -35,6 +35,7 @@ void load_select_window(int edit) // laad het selectiescherm
 	} else {
 		wclear(display);
 	}
+	current_choice = 0;
 	forEditing = edit; // set the editing boolean
 	DISPLAYMODE = levelselectie; // zet displaymodus
 	load_level_list_sqlite();
@@ -46,7 +47,7 @@ void print_choices(void) // zet alle keuzes in het scherm
 	int i = 0;
 	for (;i<levelcount;i++)
 	{
-		mvwprintw(display,i,0,"%c%d)%s",i==current_choice?SELECTOR:' ',i,levels[i]->naam); // print alle namen van levels en de selectiecursor
+		mvwprintw(display,i,0,"%c%d)%s",i==current_choice?SELECTOR:' ',levels[i]->id,levels[i]->naam); // print alle namen van levels en de selectiecursor
 	}
 	if (forEditing)
 	{
@@ -57,7 +58,7 @@ void print_choices(void) // zet alle keuzes in het scherm
 void mvselection_down(void) // stel de selectie 1 lager in of ga naar boven als we onderaan zijn
 {
 	wclear(display);
-	current_choice = (current_choice+1>levelcount)?levelcount:current_choice+1;
+	current_choice = (current_choice+1>=(levelcount + forEditing))?levelcount-(!forEditing):current_choice+1;
 }
 
 void mvselection_up(void) // stel de selectie 1 hoger in of ga naar beneden als we bovenaan zijn

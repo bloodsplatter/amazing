@@ -1,5 +1,5 @@
 // header file voor het speelveld en de speelmodus
-// afhankelijkheden: screenlib.h charsign.h
+// afhankelijkheden: screenlib
 // constanten
 #ifndef _PLAYFIELD_
 #define _PLAYFIELD_
