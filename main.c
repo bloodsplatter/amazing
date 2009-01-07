@@ -106,11 +106,21 @@ static WINDOW *commandwindow; // in dit venster worden alle shortcuts getoond
 
 // include eigen headers
 #include "tekst.h"
+#ifndef _PLAYFIELD_
 #include "playfield.h"
+#endif
+#ifndef _ENCRYPTION_
 #include "encryption.h"
+#endif
+#ifndef _EDITOR_
 #include "editor.h"
+#endif
+#ifndef _LEVELSELECT_
 #include "levelselect.h"
+#endif
+#ifndef _GAME_
 #include "game.h"
+#endif
 
 // verwerk invoer
 static void keyb_controll(void)
@@ -128,7 +138,15 @@ static void keyb_controll(void)
 		break;
 		case speelveld:
 			if (curr_char == 'Q')
-				reload_mainmenu();
+				endGame(FALSE);
+			if (curr_char == KEY_UP)
+				player_up();
+			if (curr_char == KEY_DOWN)
+				player_down();
+			if (curr_char == KEY_LEFT)
+				player_left();
+			if (curr_char == KEY_RIGHT)
+				player_right();
 		break;
 		case levelbewerker:
 			if (curr_char == KEY_UP)
@@ -179,8 +197,8 @@ static void cust_draw_loop(void)
 	switch (DISPLAYMODE)
 	{
 		case start:
-			delwin(display);
-			display = NULL;
+			if (display != NULL)
+				display = NULL;
 		break;
 		case levelselectie:
 			print_choices();
@@ -189,7 +207,7 @@ static void cust_draw_loop(void)
 			edit_draw_field();
 		break;
 		case speelveld:
-			
+			drawLevel();
 		break;
 	}
 	wrefresh(commandwindow); // teken het shortcutvenster
