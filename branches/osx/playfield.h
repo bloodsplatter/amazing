@@ -39,7 +39,6 @@ PLAYFIELD* playfield, **levels;
 int levelcount = 0;
 // functieprototypes
 void load_playfield(int);
-void draw_field(void);
 int prepare_db(void);
 void load_level_list_sqlite(void);
 void write_level_list_sqlite(void);
@@ -255,18 +254,26 @@ char** str2map(const char* mapstr,PLAYFIELD *speelveld)
 	const char* p = mapstr;
 	int hoogte = speelveld->height;
 	int breedte = speelveld->width;
-	int i,j,c = 0;
+	int i = 0,j = 0;
 	
 	speelveld->field_data = (char **)calloc(hoogte,sizeof(char*));
 	
-	for (i=0;i<hoogte && isprint(*p);i++)
+	while (*p)
 	{
-		c = strchr(p,'\n') - 1 - p;
-		*(strchr(p,'\n')) = '\0';
-		p += asprintf(speelveld->field_data+i,"%s",p);
+		if (speelveld->field_data[i]==NULL)
+			speelveld->field_data[i] = (char*)calloc(breedte,sizeof(char));
+		if (*p=='\n')
+		{
+			i++;
+			j=0; 
+		}
+		else
+		{
+			speelveld->field_data[i][j] = *p;
+			j++;
+		}
 		p++;
 	}
-	
 	
 	return speelveld->field_data;
 }
@@ -281,29 +288,6 @@ char* pos2str(char* dst, struct Position pos)
 	
 	return dst;
 }
-
-void draw_field(void) // teken het veld
-{
-	int r = 0, c = 0; // tellers
-	wclear(display); // wis de huidige inhoud
-	
-	while ( *(*(playfield->field_data+r)+c) ) 
-	{
-		wmove(display,r,0);
-		while ( *(*(playfield->field_data+r)+c) != '\n' )
-		{
-			if ( *(*(playfield->field_data+r)+c) == WALL || *(*(playfield->field_data+r)+c) == ENDPOINT )
-			{
-				mvwaddch(display,r,c,*(*(playfield->field_data+r)+c));
-			}
-			c++;
-		}
-		r++;
-	}
-	
-	mvwaddch(display,playerPos.y,playerPos.x,PLAYER); // teken de spelerpositie
-}
-
 
 // converteer string naar positie, string in x,y formaat ZONDER SPATIES!!!
 void str2pos(const char* str,PLAYFIELD * speelveld,int flag)
@@ -325,3 +309,4 @@ void str2pos(const char* str,PLAYFIELD * speelveld,int flag)
 		retPos->y = atoi(num);
 	}
 }
+

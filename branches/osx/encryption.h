@@ -7,7 +7,6 @@
 #endif
 #ifndef _ENCRYPTION_
 #define _ENCRYPTION_
-
 #endif
 
 // S-box

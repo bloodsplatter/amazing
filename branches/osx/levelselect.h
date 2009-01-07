@@ -11,6 +11,9 @@
 #ifndef _EDITOR_
 #include "editor.h"
 #endif
+#ifndef _GAME_
+#include "game.h"
+#endif
 #define SELECTOR '>'
 #endif
 
@@ -117,7 +120,7 @@ void level_selected(void) // laad geselecteerde level
 			launchEditor();
 		} else 
 		{
-			// start huidige level
+			startGame(current_choice);
 		}
 	}
 }
